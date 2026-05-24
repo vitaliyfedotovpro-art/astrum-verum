@@ -13,6 +13,21 @@ departure; the VSA layer is the part that is **validated end-to-end**.
 
 > Full story, math and results: [`docs/astrum_verum_design.md`](docs/astrum_verum_design.md).
 
+### Muninn — the memory engine
+
+*Muninn* (Old Norse *“Memory”*, one of Odin's ravens) is the name of the VSA memory layer:
+
+> **Muninn — Vector-Symbolic Associative Memory (VSAM)**, composition-episodic.
+> Retrieval is *associative* (by meaning / a partial or noisy cue) **and**
+> *structural* (by role — “who did what to whom”), not by an exact key.
+> **Zero persona-prompt: pure memory, not a personality** — it returns what is
+> stored, it does not generate or personalize.
+
+- *associative* → unlike a key-value store (no exact key needed);
+- *compositional* → unlike a plain vector DB: on role-swapped facts (“A loves B” vs “B loves A”) cosine sits at **0.5 (chance)**, Muninn at **1.0**.
+
+Names: project **Astrum Verum** · memory **Muninn** · the agent that uses it **Óðinn**.
+
 ---
 
 ## Why this exists

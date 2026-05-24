@@ -5,6 +5,32 @@
 
 ---
 
+## Muninn — official definition
+
+**Muninn** (Old Norse *“Memory”*, one of Odin's two ravens) is the name of the
+VSA memory engine (`astrum_verum/vsa`, `extract`, `cognitive`).
+
+> **Muninn — Vector-Symbolic Associative Memory (VSAM).** Composition-episodic
+> architecture: facts via algebraic role-binding (subject⊗relation⊗object),
+> conversations as permutation-encoded episodes. Retrieval is **associative *and*
+> structural** — by meaning / a partial or noisy cue (cleanup) and by role
+> (unbind), not by an exact key. **Zero persona-prompt: pure memory, not a
+> personality** — it returns what is stored; it does not generate or personalize.
+
+Two properties define it, and both are *demonstrated*, not asserted:
+- **associative** (content-addressable; recall from a partial/corrupted cue) —
+  separates Muninn from a key-value store (no exact key needed);
+- **compositional / structural** (algebraic role-binding, “who did what to whom”)
+  — separates Muninn from a plain vector DB *and* from generative “neural
+  memory”. On role-swapped facts (“A loves B” vs “B loves A”) cosine similarity
+  sits at **0.5 (chance)** while Muninn scores **1.0** (Phase 1/2).
+
+Naming: project = **Astrum Verum**; memory engine = **Muninn**; the agent that
+uses it = **Óðinn** (Muninn is literally his memory). Personality lives *above*
+the memory, never *in* it.
+
+---
+
 ## 0. TL;DR
 
 Astrum Verum contains **two layers built in sequence**, and the second exists
