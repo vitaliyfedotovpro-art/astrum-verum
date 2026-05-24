@@ -1,6 +1,10 @@
 # Contributing to Astrum Verum
 
-First off, thank you for considering contributing to **Astrum Verum**! It is a pure, academically clean, high-performance geometric vector memory framework, and we welcome contributions that preserve its mathematical elegance and high-speed execution.
+Thanks for considering a contribution to **Astrum Verum**. It has two layers: a
+geometric lattice memory (Layer 1, kept as a documented mockup) and a VSA/SDM
+composition-episodic memory (Layer 2, the validated part). Please read
+[`docs/astrum_verum_design.md`](docs/astrum_verum_design.md) first — it is candid
+about what is proven and what is not, and contributions should keep that honesty.
 
 ---
 
@@ -30,7 +34,7 @@ To set up a local development environment:
 
 ## 🧪 Running the Test Suite
 
-Astrum Verum has a comprehensive, **203-test bulletproof suite** divided into clear mathematical, algorithmic, and integration contours.
+Astrum Verum has a test suite covering both layers: the lattice geometry/algorithms (`tests/test_*` for lattice, store, rotation, scorer, …) and the VSA cognitive memory (`tests/test_vsa_memory.py` — binding, role-sensitivity, episodes, normalization, persistence).
 
 * **Run all tests (excluding slow/stress tests)**:
    ```bash
@@ -42,7 +46,7 @@ Astrum Verum has a comprehensive, **203-test bulletproof suite** divided into cl
    pytest -v
    ```
 
-Any pull request must pass all 203 tests with 100% green status before being merged.
+Any pull request must keep the full suite green before being merged.
 
 ---
 
@@ -54,7 +58,7 @@ Before pushing any computational modifications or optimizations to the spreading
 python3 benchmarks/run_benchmark.py
 ```
 
-This benchmark verifies query latency (ms), throughput (QPS), and candidate reduction ratios against standard flat cosine search baselines.
+This benchmark verifies query latency (ms), throughput (QPS), and candidate reduction ratios against a flat cosine baseline. **Caveat:** it measures *speed*, not recall — its synthetic setup decouples embeddings from lattice placement (see design doc §1.2). Treat its numbers as throughput, not retrieval quality.
 
 ---
 

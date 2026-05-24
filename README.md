@@ -1,85 +1,136 @@
 # Astrum Verum
 
-**Geometric Cognitive Memory Architecture on Perfect Lattices**
+**Composition-episodic cognitive memory for AI agents — and an honest record of how it got here.**
 
-> *Искусственный гиппокамп на кристаллических решётках.*
+Astrum Verum started as an attempt to organise long-term memory on *perfect
+lattices* (D₄ → E₈ → Leech). That geometry turned out to be an elegant but
+**unproven** vector quantizer, so the project pivoted to **Vector Symbolic
+Architectures + Sparse Distributed Memory** — a memory that stores *structure*
+(who-did-what-to-whom, in what order) and recovers it from noisy cues.
 
-Scalable lattice-structured associative memory for AI agents, using the hierarchy
-of perfect root lattices (D₄ → E₈ → Λ₂₄) as a geometric scaffold for knowledge
-organization, with neurocognitive mechanisms for navigation, association, and adaptation.
+Both layers ship here. The lattice core is kept as the documented point of
+departure; the VSA layer is the part that is **validated end-to-end**.
 
-## Features
+> Full story, math and results: [`docs/astrum_verum_design.md`](docs/astrum_verum_design.md).
 
-- **D₄ (24-cell)** — 4D lattice with 24 vertices, 96 edges, 8 neighbors per cell
-- **E₈** — 8D exceptional lattice with 240 vertices, 6720 edges, 56 neighbors per cell
-- **SO(d) Rotation Engine** — attention focus via inverse rotation (O(d²), not O(N·d²))
-- **Spreading Activation** — neurocognitive wave propagation with Hebbian learning
-- **Hybrid Scoring** — cosine similarity × topological boost × temporal recency
-- **REST API** — FastAPI service with full CRUD and search endpoints
+---
+
+## Why this exists
+
+Flat vector search (embed → cosine/HNSW) is excellent at *similarity* but blind
+to *structure*: "Alice trusts Bob" and "Bob trusts Alice" have the same word bag,
+so cosine cannot tell them apart. Astrum Verum's VSA layer binds roles to fillers,
+so it can — and it recovers facts from corrupted/partial cues like an attractor.
+
+**Headline result (reproducible):** on triples an LLM extracted from real text,
+with genuine role ambiguity, the VSA layer scores **1.000** where a cosine-RAG
+baseline scores **0.600** (chance on the ambiguous pairs).
+
+---
 
 ## Install
 
 ```bash
-pip install -e ".[dev]"
-
-# For the REST API:
-pip install -e ".[dev,api]"
+pip install -e ".[dev]"        # core + tests
+pip install -e ".[dev,api]"    # + FastAPI service for the lattice layer
 ```
 
-## Quick Start
+Python ≥ 3.11. Extraction needs an LLM key (`DEEPSEEK_API_KEY`, or `XAI_/GROQ_`)
+in the environment or a local `.env`.
+
+---
+
+## Quick start — the cognitive memory (Layer 2)
 
 ```python
-from astrum_verum import AstrumEngine
+from astrum_verum import OdinnMemory
 
-# Create engine (D₄ lattice by default)
-engine = AstrumEngine()
+mem = OdinnMemory()
 
-# Add memories
-engine.add("Photosynthesis converts sunlight into chemical energy in plants")
-engine.add("Neural networks are composed of layers of artificial neurons")
-engine.add("Chloroplasts contain chlorophyll for photosynthesis")
+# Remember facts from free text (LLM extracts structured triples)
+mem.remember("Maya founded Helix. Iris mentored Maya. Maya mentors the juniors.")
 
-# Search — topological + semantic + temporal scoring
-results = engine.search("plant biology and energy conversion")
-for r in results:
-    print(f"  [{r.score:.3f}] {r.text}")
+mem.recall_object("Maya", "founded")     # → "Helix"
+mem.recall_subject("mentored", "Maya")   # → "Iris"     (direction matters!)
+mem.recall_object("Maya", "mentors")     # → "the juniors"
+
+# Episodes: order is first-class
+eid = mem.remember_conversation([
+    "greeted the user", "reviewed the results", "scheduled a follow-up call",
+])
+mem.whats_next(eid, "reviewed the results")   # → "scheduled a follow-up call"
+
+mem.save("~/.astrum_verum/odinn")              # persists across sessions
+mem2 = OdinnMemory.load("~/.astrum_verum/odinn")
 ```
 
-## Using E₈ (240 semantic domains)
+You can also add facts directly (no LLM) via `mem.remember_triple(s, r, o)`.
+
+### What it does that cosine search cannot
+- **Role-sensitive recall** — distinguishes `(X r Y)` from `(Y r X)`.
+- **Error-correcting cleanup** — recovers the canonical fact from a noisy cue.
+- **Episodic order** — "what happened, and in what sequence".
+- **One-shot writes & persistence** — no reindexing; survives restarts.
+
+---
+
+## The lattice layer (Layer 1, kept for honesty)
 
 ```python
 from astrum_verum import AstrumEngine
 from astrum_verum.lattice import E8Plugin
 
-engine = AstrumEngine(lattice=E8Plugin())
+engine = AstrumEngine(lattice=E8Plugin())   # D₄ by default
+engine.add("Photosynthesis converts sunlight into chemical energy")
+engine.search("plant biology")
 ```
 
-## REST API
+This works and the geometry is correct, but see the design doc §1 for why its
+retrieval-quality thesis is unproven (the bottleneck is the 384→d projection,
+not the lattice). A REST API is available via `uvicorn astrum_verum.api:app`.
+
+---
+
+## Validation (run it yourself)
 
 ```bash
-uvicorn astrum_verum.api:app --reload
+pytest tests/test_vsa_memory.py -q                     # VSA layer (no network)
+PYTHONPATH=. python experiments/vsa_sdm/phase0_algebra.py    # algebra on clean atoms
+PYTHONPATH=. python experiments/vsa_sdm/phase1_grounding.py  # grounding survives real embeddings
+PYTHONPATH=. python experiments/vsa_sdm/phase2_pipeline.py   # vs cosine-RAG on extracted triples (needs LLM key)
+PYTHONPATH=. python experiments/vsa_sdm/phase3_full.py       # full OdinnMemory end-to-end (needs LLM key)
 ```
 
-| Endpoint | Method | Description |
+| Phase | Claim tested | Result |
 |---|---|---|
-| `/memory/add` | POST | Add a memory |
-| `/memory/search` | POST | Topological search (AstrumSearch) |
-| `/memory/state` | GET | Current engine state |
-| `/memory/cells` | GET | List cells with node counts |
-| `/memory/cell/{id}/nodes` | GET | Nodes in a specific cell |
-| `/lattice/info` | GET | Lattice metadata |
+| 0 | binding capacity + attractor cleanup | 100+ pairs @ D=10k; exact recovery ≤40 % noise |
+| 1 | grounding doesn't break binding | corr 0.988, grounding drop 0.000 |
+| 2 | beats cosine on real extracted data | VSA 1.000 vs RAG 0.600 (role-ambiguous) |
+| 3 | facts+episodes+normalize+persist | pytest 6/6, demo PASS |
 
-## Architecture
+---
 
-See [astrum_verum_design.md](./docs/astrum_verum_design.md) for the full design document.
+## Layout
 
-## Tests
-
-```bash
-# Core tests (no ML model needed)
-pytest tests/test_lattice_d4.py tests/test_lattice_e8.py tests/test_rotation.py \
-       tests/test_store.py tests/test_activation.py tests/test_scorer.py -v
-
-# Full integration tests (downloads sentence-transformers model on first run)
-pytest tests/ -v
 ```
+astrum_verum/
+  vsa/          # VSA core (MAP) + VSAMemory  ← the validated layer
+  extract/      # LLM triple extractor (DeepSeek→xAI→Groq)
+  cognitive.py  # OdinnMemory facade
+  lattice/      # D₄ / E₈ plugins (Layer 1)
+  engine.py …   # lattice pipeline, store, scorer, rotation, API
+experiments/vsa_sdm/   # the validation arc (phases 0–3)
+docs/astrum_verum_design.md   # full design & honest research notes
+```
+
+---
+
+## Status & limitations
+
+Research library, not yet wired into a production agent. VSA **adds** structural
+recall — it does not replace nearest-neighbour search. Extraction/normalization
+on messy real dialogue is the next open problem. See design doc §5.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
