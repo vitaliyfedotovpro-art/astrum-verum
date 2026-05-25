@@ -6,7 +6,7 @@ An artificial hippocampus built on crystallographic lattices (D₄ → E₈ → 
 
 __version__ = "0.1.0"
 
-from .cognitive import OdinnMemory
+from .cognitive import CognitiveMemory
 from .lattice import D4Plugin, E8Plugin, LatticeInfo, LatticePlugin
 from .store import MemoryNode, TopologyStore
 from .vsa import VSAMemory
@@ -18,7 +18,7 @@ __all__ = [
     "LatticeInfo",
     "LatticePlugin",
     "MemoryNode",
-    "OdinnMemory",
+    "CognitiveMemory",
     "TopologyStore",
     "VSAMemory",
 ]

@@ -1,5 +1,11 @@
 # Astrum Verum — Mathematical & Geometric Foundations
 
+> **Note:** This document describes the **Layer 1 (lattice) geometry** — the math
+> is correct, but its retrieval-quality thesis is **unproven**. See
+> [`docs/astrum_verum_design.md` §1.2](../docs/astrum_verum_design.md) for an
+> honest assessment. The validated part of the project is the **VSA/SDM layer**
+> (Layer 2).
+
 Astrum Verum is an open-source, zero-dependency, academically clean vector memory framework that organizes high-dimensional semantic vectors using dense coordinate lattices in 4D and 8D.
 
 Below is the theoretical and operational breakdown of the core modules.

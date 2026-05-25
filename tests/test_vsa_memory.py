@@ -93,7 +93,7 @@ class TestPersistence:
         m.add_triple("bob", "trusts", "alice")
         eid = m.add_episode(["a", "b", "c", "d"])
 
-        p = tmp_path / "odinn"
+        p = tmp_path / "memory_state"
         m.save(p)
         m2 = VSAMemory.load(p, embed_fn=fake_embed)
 

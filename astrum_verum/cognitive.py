@@ -1,15 +1,15 @@
 """
-OdinnMemory — единый фасад композиционно-эпизодической памяти.
+CognitiveMemory — единый фасад композиционно-эпизодической памяти.
 
 Связывает извлечение (LLM-триплеты) и VSA-слой в одну юзабельную память:
 
-    mem = OdinnMemory()
+    mem = CognitiveMemory()
     mem.remember("Maya founded Helix. Iris mentored Maya.")
     mem.recall_object("Maya", "founded")        # → "Helix"
     mem.recall_subject("mentored", "Maya")      # → "Iris"
     mem.remember_conversation(["greeting", "asked about USG", "scheduled call"])
     mem.whats_next(episode_id, "asked about USG")  # → "scheduled call"
-    mem.save("~/.astrum_verum/odinn")              # переживает сессии
+    mem.save("~/.astrum_verum/memory_state")       # переживает сессии
 
 Извлечение (`remember`) требует LLM-ключ (DeepSeek→xAI→Groq из env/.env).
 Запросы и эпизоды работают без сети. Это НЕ обрезанная версия: факты +
@@ -27,7 +27,7 @@ from .extract import extract_triples
 from .vsa import VSAMemory
 
 
-class OdinnMemory:
+class CognitiveMemory:
     def __init__(
         self,
         D: int = 10_000,
@@ -73,10 +73,10 @@ class OdinnMemory:
         self.vsa.save(path)
 
     @classmethod
-    def load(cls, path: str | Path, embed_fn: Callable[[str], np.ndarray] | None = None) -> "OdinnMemory":
+    def load(cls, path: str | Path, embed_fn: Callable[[str], np.ndarray] | None = None) -> "CognitiveMemory":
         obj = cls.__new__(cls)
         obj.vsa = VSAMemory.load(path, embed_fn=embed_fn)
         return obj
 
     def __repr__(self) -> str:
-        return f"OdinnMemory({self.vsa!r})"
+        return f"CognitiveMemory({self.vsa!r})"

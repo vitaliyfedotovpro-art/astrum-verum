@@ -5,12 +5,11 @@
 
 ---
 
-## Muninn — official definition
+## VSACognitiveMemory — official definition
 
-**Muninn** (Old Norse *“Memory”*, one of Odin's two ravens) is the name of the
-VSA memory engine (`astrum_verum/vsa`, `extract`, `cognitive`).
+**VSACognitiveMemory** (the active VSA memory layer) is defined as follows:
 
-> **Muninn — Vector-Symbolic Associative Memory (VSAM).** Composition-episodic
+> **VSACognitiveMemory — Vector-Symbolic Associative Memory (VSAM).** Composition-episodic
 > architecture: facts via algebraic role-binding (subject⊗relation⊗object),
 > conversations as permutation-encoded episodes. Retrieval is **associative *and*
 > structural** — by meaning / a partial or noisy cue (cleanup) and by role
@@ -19,15 +18,14 @@ VSA memory engine (`astrum_verum/vsa`, `extract`, `cognitive`).
 
 Two properties define it, and both are *demonstrated*, not asserted:
 - **associative** (content-addressable; recall from a partial/corrupted cue) —
-  separates Muninn from a key-value store (no exact key needed);
+  separates this engine from a key-value store (no exact key needed);
 - **compositional / structural** (algebraic role-binding, “who did what to whom”)
-  — separates Muninn from a plain vector DB *and* from generative “neural
+  — separates this engine from a plain vector DB *and* from generative “neural
   memory”. On role-swapped facts (“A loves B” vs “B loves A”) cosine similarity
-  sits at **0.5 (chance)** while Muninn scores **1.0** (Phase 1/2).
+  sits at **0.5 (chance)** while this engine scores **1.0** (Phase 1/2).
 
-Naming: project = **Astrum Verum**; memory engine = **Muninn**; the agent that
-uses it = **Óðinn** (Muninn is literally his memory). Personality lives *above*
-the memory, never *in* it.
+Naming: project = **Astrum Verum**; memory engine = **CognitiveMemory**. Personality lives *above*
+the memory — the memory just returns exact structures.
 
 ---
 
@@ -176,16 +174,16 @@ Modelled on a production batch extractor: an LLM (DeepSeek → xAI → Groq fall
 turns free text into **ordered (subject, relation, object) triples** (not flat
 facts), with exact-triple dedup so role-swaps survive (`A→B` ≠ `B→A`).
 
-### 3.4 Facade (`cognitive.py` — `OdinnMemory`)
+### 3.4 Facade (`cognitive.py` — `CognitiveMemory`)
 
 ```python
-mem = OdinnMemory()
+mem = CognitiveMemory()
 mem.remember("Maya founded Helix. Iris mentored Maya.")  # LLM → triples
 mem.recall_object("Maya", "founded")        # → "Helix"
 mem.recall_subject("mentored", "Maya")       # → "Iris"   (direction matters)
 eid = mem.remember_conversation([...])        # ordered episode
 mem.whats_next(eid, "reviewed the results")   # → "scheduled a follow-up call"
-mem.save("~/.astrum_verum/odinn")             # survives sessions
+mem.save("~/.astrum_verum/memory_state")             # survives sessions
 ```
 
 ---

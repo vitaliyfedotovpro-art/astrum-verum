@@ -14,7 +14,7 @@ To set up a local development environment:
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/yourusername/astrum-verum.git
+   git clone https://github.com/vitaliyfedotovpro-art/astrum-verum.git
    cd astrum-verum
    ```
 

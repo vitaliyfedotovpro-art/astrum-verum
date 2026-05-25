@@ -1,7 +1,7 @@
 [project]
 name = "astrum-verum"
 version = "0.1.0"
-description = "Geometric Cognitive Memory Architecture on Perfect Lattices"
+description = "Composition-episodic cognitive memory for AI agents (VSA + lattice geometry)"
 requires-python = ">=3.11"
 dependencies = [
     "numpy>=1.26",

@@ -1,5 +1,5 @@
 """
-Astrum Verum — Phase 3: полный OdinnMemory в деле (не обрезанный).
+Astrum Verum — Phase 3: полный CognitiveMemory в деле (не обрезанный).
 
 Демонстрирует ВСЕ способности живьём (реальный эмбеддер + живой LLM-extractor):
   1. remember(text)            — извлечь факты-триплеты и запомнить
@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from astrum_verum import OdinnMemory
+from astrum_verum import CognitiveMemory
 
 OUT_MD = Path(__file__).with_name("phase3_results.md")
 
@@ -44,10 +44,10 @@ def main() -> None:
         lines.append(s)
 
     emit("=" * 70)
-    emit("  ASTRUM VERUM — PHASE 3  (полный OdinnMemory, живьём)")
+    emit("  ASTRUM VERUM — PHASE 3  (полный CognitiveMemory, живьём)")
     emit("=" * 70)
 
-    mem = OdinnMemory(normalize_threshold=0.78)
+    mem = CognitiveMemory(normalize_threshold=0.78)
 
     # --- 1. remember (живой LLM) ---
     emit("\n## 1. remember(text) — извлечение фактов")
@@ -101,9 +101,9 @@ def main() -> None:
 
     # --- 6. персистентность ---
     emit("\n## 6. персистентность (save → load)")
-    path = Path(__file__).with_name(".phase3_odinn_state")
+    path = Path(__file__).with_name(".phase3_cognitive_state")
     mem.save(path)
-    mem2 = OdinnMemory.load(path)
+    mem2 = CognitiveMemory.load(path)
     rl = mem2.recall_object("Alice", "trusts")
     persist_ok = (
         mem2.vsa.n_facts == mem.vsa.n_facts
@@ -119,12 +119,12 @@ def main() -> None:
     emit("\n" + "=" * 70)
     all_ok = rt_ok == len(triples) and order_ok and nxt_ok and persist_ok
     emit("  ВЕРДИКТ PHASE 3: " + (
-        "PASS ✓✓ — полный OdinnMemory работает: факты, роли, эпизоды, нормализация, персист."
+        "PASS ✓✓ — полный CognitiveMemory работает: факты, роли, эпизоды, нормализация, персист."
         if all_ok else "ЧАСТИЧНО — см. промахи выше."
     ))
     emit("=" * 70)
 
-    OUT_MD.write_text("# Phase 3 — полный OdinnMemory (живьём)\n\n```\n"
+    OUT_MD.write_text("# Phase 3 — полный CognitiveMemory (живьём)\n\n```\n"
                       + "\n".join(lines) + "\n```\n")
     print(f"\n[отчёт записан] {OUT_MD}")
 

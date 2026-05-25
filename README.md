@@ -2,31 +2,27 @@
 
 **Composition-episodic cognitive memory for AI agents — and an honest record of how it got here.**
 
-Astrum Verum started as an attempt to organise long-term memory on *perfect
-lattices* (D₄ → E₈ → Leech). That geometry turned out to be an elegant but
-**unproven** vector quantizer, so the project pivoted to **Vector Symbolic
-Architectures + Sparse Distributed Memory** — a memory that stores *structure*
-(who-did-what-to-whom, in what order) and recovers it from noisy cues.
+Astrum Verum is a research project containing two distinct phases of memory architecture development. It started as an attempt to organize memory on perfect geometric lattices (**Phase 1**), but when that proved insufficient for structural recall, it pivoted to Vector Symbolic Architectures (**Phase 2**).
 
-Both layers ship here. The lattice core is kept as the documented point of
-departure; the VSA layer is the part that is **validated end-to-end**.
+Both phases ship in this repository. **Phase 1** is kept as a documented historical mockup. **Phase 2** is the working, validated engine that powers the actual AI agent.
 
 > Full story, math and results: [`docs/astrum_verum_design.md`](docs/astrum_verum_design.md).
 
-### Muninn — the memory engine
+---
 
-*Muninn* (Old Norse *“Memory”*, one of Odin's ravens) is the name of the VSA memory layer:
+## The Engine: Phase 2 (VSA Cognitive Memory)
 
-> **Muninn — Vector-Symbolic Associative Memory (VSAM)**, composition-episodic.
+**CognitiveMemory** is the name of the active VSA memory layer.
+
+> **CognitiveMemory — Vector-Symbolic Associative Memory (VSAM)**, composition-episodic.
 > Retrieval is *associative* (by meaning / a partial or noisy cue) **and**
 > *structural* (by role — “who did what to whom”), not by an exact key.
-> **Zero persona-prompt: pure memory, not a personality** — it returns what is
-> stored, it does not generate or personalize.
+> **Zero persona-prompt: pure memory, not a personality** — it returns what is stored.
 
 - *associative* → unlike a key-value store (no exact key needed);
-- *compositional* → unlike a plain vector DB: on role-swapped facts (“A loves B” vs “B loves A”) cosine sits at **0.5 (chance)**, Muninn at **1.0**.
+- *compositional* → unlike a plain vector DB: on role-swapped facts (“A loves B” vs “B loves A”) cosine sits at **0.5 (chance)**, CognitiveMemory at **1.0**.
 
-Names: project **Astrum Verum** · memory **Muninn** · the agent that uses it **Óðinn**.
+Names: project **Astrum Verum** · memory engine **CognitiveMemory**.
 
 ---
 
@@ -47,26 +43,23 @@ baseline scores **0.600** (chance on the ambiguous pairs).
 
 ```bash
 pip install -e ".[dev]"        # core + tests
-pip install -e ".[dev,api]"    # + FastAPI service for the lattice layer
+pip install -e ".[dev,api]"    # + FastAPI service for the Phase 1 layer
 ```
 
-Python ≥ 3.11. Extraction needs an LLM key (`DEEPSEEK_API_KEY`, or `XAI_/GROQ_`)
+Python ≥ 3.11. Phase 2 extraction needs an LLM key (`DEEPSEEK_API_KEY`, or `XAI_/GROQ_`)
 in the environment or a local `.env`.
 
 ---
 
-## Quick start — the cognitive memory (Layer 2)
+## Quick Start — Phase 2 (The Working Memory)
 
 ```python
-from astrum_verum import OdinnMemory
+from astrum_verum import CognitiveMemory
 
-mem = OdinnMemory()
-
-# Remember facts from free text (LLM extracts structured triples)
-mem.remember("Maya founded Helix. Iris mentored Maya. Maya mentors the juniors.")
-
-mem.recall_object("Maya", "founded")     # → "Helix"
-mem.recall_subject("mentored", "Maya")   # → "Iris"     (direction matters!)
+mem = CognitiveMemory()
+mem.remember("Maya founded Helix. Iris mentored Maya.")
+mem.recall_object("Maya", "founded")         # → "Helix"
+mem.recall_subject("mentored", "Maya")       # → "Iris"     (direction matters!)
 mem.recall_object("Maya", "mentors")     # → "the juniors"
 
 # Episodes: order is first-class
@@ -75,8 +68,8 @@ eid = mem.remember_conversation([
 ])
 mem.whats_next(eid, "reviewed the results")   # → "scheduled a follow-up call"
 
-mem.save("~/.astrum_verum/odinn")              # persists across sessions
-mem2 = OdinnMemory.load("~/.astrum_verum/odinn")
+mem.save("~/.astrum_verum/memory_state")              # persists across sessions
+mem2 = CognitiveMemory.load("~/.astrum_verum/memory_state")
 ```
 
 You can also add facts directly (no LLM) via `mem.remember_triple(s, r, o)`.
@@ -89,7 +82,7 @@ You can also add facts directly (no LLM) via `mem.remember_triple(s, r, o)`.
 
 ---
 
-## The lattice layer (Layer 1, kept for honesty)
+## The Legacy Mockup: Phase 1 (Lattice Geometry)
 
 ```python
 from astrum_verum import AstrumEngine
@@ -113,7 +106,7 @@ pytest tests/test_vsa_memory.py -q                     # VSA layer (no network)
 PYTHONPATH=. python experiments/vsa_sdm/phase0_algebra.py    # algebra on clean atoms
 PYTHONPATH=. python experiments/vsa_sdm/phase1_grounding.py  # grounding survives real embeddings
 PYTHONPATH=. python experiments/vsa_sdm/phase2_pipeline.py   # vs cosine-RAG on extracted triples (needs LLM key)
-PYTHONPATH=. python experiments/vsa_sdm/phase3_full.py       # full OdinnMemory end-to-end (needs LLM key)
+PYTHONPATH=. python experiments/vsa_sdm/phase3_full.py       # full CognitiveMemory end-to-end (needs LLM key)
 ```
 
 | Phase | Claim tested | Result |
@@ -125,16 +118,18 @@ PYTHONPATH=. python experiments/vsa_sdm/phase3_full.py       # full OdinnMemory 
 
 ---
 
-## Layout
+## Repository Layout
 
 ```
 astrum_verum/
-  vsa/          # VSA core (MAP) + VSAMemory  ← the validated layer
-  extract/      # LLM triple extractor (DeepSeek→xAI→Groq)
-  cognitive.py  # OdinnMemory facade
-  lattice/      # D₄ / E₈ plugins (Layer 1)
-  engine.py …   # lattice pipeline, store, scorer, rotation, API
-experiments/vsa_sdm/   # the validation arc (phases 0–3)
+  vsa/          # PHASE 2: VSA core (MAP) + VSAMemory  ← the validated layer
+  extract/      # PHASE 2: LLM triple extractor (DeepSeek→xAI→Groq)
+  cognitive.py  # PHASE 2: CognitiveMemory facade
+  
+  lattice/      # PHASE 1: D₄ / E₈ plugins (Legacy mockup)
+  engine.py …   # PHASE 1: lattice pipeline, store, scorer, rotation, API
+
+experiments/vsa_sdm/          # the Phase 2 validation arc (phases 0–3)
 docs/astrum_verum_design.md   # full design & honest research notes
 ```
 
