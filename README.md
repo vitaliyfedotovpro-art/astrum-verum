@@ -33,10 +33,13 @@ to *structure*: "Alice trusts Bob" and "Bob trusts Alice" have the same word bag
 so cosine cannot tell them apart. Astrum Verum's VSA layer binds roles to fillers,
 so it can — and it recovers facts from corrupted/partial cues like an attractor.
 
+**The "Alice and Bob" RAG failure:**
+If a standard RAG memory stores "Alice killed Bob" and you ask "Who killed Alice?", it often hallucinates "Bob" because it just retrieves proximity tokens. Astrum Verum parses `kill(Alice, Bob)` mathematically. When asked `kill(?, Alice)`, it yields `None`. Zero hallucination.
+> Read more: [Why Structural Memory (VSA) Beats Standard RAG](docs/structural_memory_vs_rag.md)
+
 **Headline result (reproducible):** on triples an LLM extracted from real text,
 with genuine role ambiguity, the VSA layer scores **1.000** where a cosine-RAG
 baseline scores **0.600** (chance on the ambiguous pairs).
-
 ---
 
 ## Install
