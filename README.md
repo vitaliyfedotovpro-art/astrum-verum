@@ -2,10 +2,15 @@
 
 **Composition-episodic cognitive memory for AI agents — and an honest record of how it got here.**
 
+<p align="center">
+  <img src="./docs/astrum_verum_vsa_lattice.png" alt="Artificial Hippocampus on Root Lattices" width="600"/>
+</p>
+
 Astrum Verum is a research project containing two distinct phases of memory architecture development. It started as an attempt to organize memory on perfect geometric lattices (**Phase 1**), but when that proved insufficient for structural recall, it pivoted to Vector Symbolic Architectures (**Phase 2**).
 
 Both phases ship in this repository. **Phase 1** is kept as a documented historical mockup. **Phase 2** is the working, validated engine that powers the actual AI agent.
 
+> Read the new mathematical paper: [Why VSA Works for Large-Scale Memory](./docs/WHY_VSA_WORKS.md) (Solving Capacity Collapse & Decoding Hallucinations)
 > Full story, math and results: [`docs/astrum_verum_design.md`](docs/astrum_verum_design.md).
 
 ---
