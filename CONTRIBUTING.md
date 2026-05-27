@@ -1,70 +1,77 @@
 # Contributing to Astrum Verum
 
-Thanks for considering a contribution to **Astrum Verum**. It has two layers: a
-geometric lattice memory (Layer 1, kept as a documented mockup) and a VSA/SDM
-composition-episodic memory (Layer 2, the validated part). Please read
-[`docs/astrum_verum_design.md`](docs/astrum_verum_design.md) first — it is candid
-about what is proven and what is not, and contributions should keep that honesty.
+Astrum Verum has two layers: a geometric lattice memory (Layer 1, kept as a
+documented mockup) and a VSA/SDM composition-episodic memory (Layer 2, the
+validated part). See [`docs/astrum_verum_design.md`](docs/astrum_verum_design.md) —
+it is candid about what is proven and what is not.
 
 ---
 
-## 🛠️ Development Setup
+## ⚠️ Pull Requests are not accepted at this time
 
-To set up a local development environment:
+This repo is public for **review, learning, demonstration, and discussion** — but
+it is **not** currently open to external code contributions.
 
-1. **Clone the Repository**:
+**Please do NOT open Pull Requests** — they will be closed unmerged.
+
+You are very welcome to:
+- ⭐ **Open Issues** — bugs, questions, observations
+- 💬 **Start Discussions** — ideas, design feedback, use cases
+
+**Why:** the codebase is kept 100% authored by the maintainer so it can be freely
+reused in other projects (including closed-source/commercial ones) without
+contributor-license complications. Taking outside patches without a CLA would
+forfeit that, so for now the project simply doesn't accept them.
+
+---
+
+## 🛠️ Development Setup (for running/reviewing locally)
+
+1. **Clone**:
    ```bash
    git clone https://github.com/vitaliyfedotovpro-art/astrum-verum.git
    cd astrum-verum
    ```
-
-2. **Create and Activate a Virtual Environment**:
+2. **Virtualenv**:
    ```bash
    python3 -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   source .venv/bin/activate  # Windows: .venv\Scripts\activate
    ```
-
-3. **Install Dependencies**:
-   Install the package in editable mode along with development and API extra dependencies:
+3. **Install** (editable + dev/api extras):
    ```bash
    pip install -e ".[dev,api]"
    ```
 
----
-
 ## 🧪 Running the Test Suite
 
-Astrum Verum has a test suite covering both layers: the lattice geometry/algorithms (`tests/test_*` for lattice, store, rotation, scorer, …) and the VSA cognitive memory (`tests/test_vsa_memory.py` — binding, role-sensitivity, episodes, normalization, persistence).
+Covers both layers: lattice geometry/algorithms and the VSA cognitive memory
+(`tests/test_vsa_memory.py` — binding, role-sensitivity, episodes, normalization, persistence).
 
-* **Run all tests (excluding slow/stress tests)**:
-   ```bash
-   pytest -v -m "not slow"
-   ```
+```bash
+pytest -v -m "not slow"   # fast suite
+pytest -v                 # full suite (incl. stress test)
+```
 
-* **Run the full test suite (including the 50,000 nodes stress test)**:
-   ```bash
-   pytest -v
-   ```
-
-Any pull request must keep the full suite green before being merged.
-
----
-
-## 📊 Running Performance Benchmarks
-
-Before pushing any computational modifications or optimizations to the spreading activation or lattice quantization code, please run the benchmark to verify there are no speed regressions:
+## 📊 Performance Benchmarks
 
 ```bash
 python3 benchmarks/run_benchmark.py
 ```
-
-This benchmark verifies query latency (ms), throughput (QPS), and candidate reduction ratios against a flat cosine baseline. **Caveat:** it measures *speed*, not recall — its synthetic setup decouples embeddings from lattice placement (see design doc §1.2). Treat its numbers as throughput, not retrieval quality.
-
----
+Measures query latency (ms), throughput (QPS), candidate-reduction vs a flat cosine
+baseline. **Caveat:** it measures *speed*, not recall — synthetic setup decouples
+embeddings from lattice placement (design doc §1.2). Treat numbers as throughput.
 
 ## 🎨 Design Principles
 
-1. **Academic Cleanliness**: Keep modules highly focused, mathematical, and free of unnecessary third-party dependencies.
-2. **Type Safety**: Strictly apply static type hints (`numpy.ndarray`, Python type annotations) across all functions.
-3. **Isometry & Precision**: All coordinate operations on $D_4$ and $E_8$ lattices must strictly preserve Euclidean norms, angular relations, and distance metrics.
-4. **Tested Stability**: Any new feature or plugin must be accompanied by corresponding unit and integration tests.
+1. **Academic cleanliness** — focused, mathematical modules, minimal third-party deps.
+2. **Type safety** — strict type hints across functions.
+3. **Isometry & precision** — coordinate ops on $D_4$/$E_8$ preserve norms, angles, distances.
+4. **Tested stability** — features come with tests.
+
+---
+
+## License
+
+Astrum Verum is licensed under **AGPL-3.0** (see `LICENSE`). Copyright © 2026 Vitaliy Fedotov.
+Copyleft/network terms apply to any use or distribution; the copyright holder retains
+the right to license the code separately.
