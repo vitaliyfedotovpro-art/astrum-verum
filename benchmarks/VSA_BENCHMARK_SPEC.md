@@ -1,81 +1,81 @@
-# Спецификация: статистически валидный бенчмарк VSAMemory
+# Specification: Statistically Valid VSAMemory Benchmark
 
-## Зачем
-Текущие цифры проекта (facts recall 1.000@8000, SimHash grounding corr ~0.99,
-episode order-recall 0.995@200 → 0.25@1000) получены **одиночными прогонами**.
-Их нельзя приводить как измеренные величины. Нужен бенчмарк, который даёт каждую
-точку как **mean ± std по репликации над несколькими seed**, потому что атомы
-(`random_atoms`) и SimHash-проекция стохастичны.
+## Why
+The current project figures (facts recall 1.000@8000, SimHash grounding corr ~0.99,
+episode order-recall 0.995@200 → 0.25@1000) were obtained from **single runs**.
+They cannot be cited as measured values. We need a benchmark that yields each
+point as **mean ± std over replication across multiple seeds**, because the atoms
+(`random_atoms`) and the SimHash projection are stochastic.
 
-## Железные правила честности (НАРУШЕНИЕ = провал задачи)
-1. **Никакого cherry-pick.** Репортить ВСЕ прогоны, включая худшие seed. Для каждой
-   точки: mean, std, min, max, n_seeds.
-2. **Сохранять raw per-seed** в CSV — чтобы цифры можно было перепроверить.
-3. **Только реальные эмбеддинги** (см. ниже). Никаких выдуманных чисел.
-4. Если что-то не запустилось / упёрлось в ресурсы — **честно записать в отчёт**,
-   что и почему, и снизить параметр, а не подгонять результат.
-5. Не трогать рабочий код памяти. Только новый файл бенчмарка + файлы результатов.
+## Iron-clad Honesty Rules (VIOLATION = task failure)
+1. **No cherry-picking.** Report ALL runs, including the worst seeds. For each
+   point: mean, std, min, max, n_seeds.
+2. **Keep raw per-seed** in CSV — so numbers can be independently verified.
+3. **Only real embeddings** (see below). No fabricated numbers.
+4. If something fails / hits resource limits — **honestly record in the report**
+   what and why, and lower the parameter, rather than fudging the result.
+5. Do not touch the working memory code. Only the new benchmark file + result files.
 
-## API (прочитай `astrum_verum/vsa/memory.py` и `astrum_verum/vsa/core.py`)
+## API (read `astrum_verum/vsa/memory.py` and `astrum_verum/vsa/core.py`)
 - `VSAMemory(D=10000, seed=int, normalize_threshold=0.82, embed_fn=callable|None)`
 - `.add_triple(subject, relation, obj) -> idx`
 - `.query({"subject":s, "relation":r}, "object") -> {"answer","score","triple","fact_idx"}`
-  (аналогично recall по subject: `query({"relation":r,"object":o}, "subject")`)
+  (similarly for recall by subject: `query({"relation":r,"object":o}, "subject")`)
 - `.add_episode(list[str], episode_id) -> eid`
 - `.recall_at(eid, pos) -> str` ; `.episode_order(eid) -> list[str]`
-- `core.ground(emb, proj)`, `core.make_projection(emb_dim, D, rng)` — для grounding-теста.
+- `core.ground(emb, proj)`, `core.make_projection(emb_dim, D, rng)` — for grounding test.
 
-## Референсы стиля и методологии (прочитай оба)
-- `experiments/vsa_sdm/phase0_algebra.py` — образец: trials-loop, заранее зафиксированные
-  пороги, отчёт в `.md`. Скопируй дисциплину, но это синтетика — нам нужен реальный API.
-- `experiments/vsa_sdm/phase1_grounding.py` — как мерили SimHash grounding corr (воспроизвести).
+## Style and Methodology References (read both)
+- `experiments/vsa_sdm/phase0_algebra.py` — template: trials-loop, pre-fixed
+  thresholds, `.md` report. Copy the discipline, but this is synthetic — we need real API.
+- `experiments/vsa_sdm/phase1_grounding.py` — how SimHash grounding corr was measured (reproduce).
 
-## Эмбеддер / данные
-- VSAMemory по умолчанию грузит sentence-transformers
-  `paraphrase-multilingual-MiniLM-L12-v2`. **Использовать реальный эмбеддер.**
-- Чтобы seed-свип был быстрым: предпосчитай эмбеддинги всех уникальных текстов
-  ОДИН раз, оберни в `embed_fn` с кэшем (`dict[text] -> np.ndarray`), передавай как
-  `VSAMemory(embed_fn=cached_fn, seed=…)`. Тогда при смене seed пересоздаются только
-  roles/projection (дёшево), а тяжёлый эмбеддинг считается один раз.
-- **CORPUS:** сгенерируй детерминированно (отдельный фиксированный data-seed, НЕ путать
-  с VSA-seed) пул уникальных триплетов из реальных слов (имена, города, профессии,
-  животные, болезни, материалы и т.п. — комбинируй реальные лексемы, не `node-0001`).
-  Нужно достаточно уникальных (subject, relation, object) для max N. Задокументируй,
-  как именно генерил пул.
-- Если реальный эмбеддер недоступен или 16000 фактов не тянет машина — снизь верхнюю
-  границу N (например до 8000) и **честно зафиксируй это в отчёте**.
+## Embedder / Data
+- VSAMemory defaults to loading sentence-transformers
+  `paraphrase-multilingual-MiniLM-L12-v2`. **Use a real embedder.**
+- To make the seed-sweep fast: precompute embeddings of all unique texts
+  ONCE, wrap in an `embed_fn` with a cache (`dict[text] -> np.ndarray`), pass as
+  `VSAMemory(embed_fn=cached_fn, seed=…)`. Then when the seed changes, only
+  roles/projection are recreated (cheap), while heavy embedding is computed once.
+- **CORPUS:** deterministically generate (separate fixed data-seed, DO NOT confuse
+  with VSA-seed) a pool of unique triples from real words (names, cities, professions,
+  animals, diseases, materials, etc. — combine real lexemes, not `node-0001`).
+  We need enough unique (subject, relation, object) for max N. Document
+  exactly how the pool was generated.
+- If a real embedder is unavailable or the machine can't handle 16000 facts — lower the upper
+  bound N (e.g. to 8000) and **honestly state this in the report**.
 
-## Эксперименты
+## Experiments
 
-### E1 — Facts structural recall vs N (масштабирование ёмкости)
-- `N ∈ {1000, 2000, 4000, 8000, 16000}`, `seeds = 30` различных.
-- Для каждого (N, seed): новый `VSAMemory(seed=seed, embed_fn=cached)`, добавить N
-  различных триплетов; затем на случайной подвыборке (≥200 фактов или все, если меньше)
-  сделать `query` (известны subject+relation → восстановить object); точность =
-  доля `answer == истинный object`.
-- Точка (N): mean ± std ± min точности по 30 seeds.
+### E1 — Facts structural recall vs N (capacity scaling)
+- `N ∈ {1000, 2000, 4000, 8000, 16000}`, `seeds = 30` different ones.
+- For each (N, seed): new `VSAMemory(seed=seed, embed_fn=cached)`, add N
+  distinct triples; then on a random subsample (≥200 facts or all if fewer)
+  do a `query` (known subject+relation → recover object); accuracy =
+  fraction of `answer == true object`.
+- Point (N): mean ± std ± min accuracy across 30 seeds.
 
-### E2 — Episode order-recall vs length (saturation + проверка окна)
+### E2 — Episode order-recall vs length (saturation + window test)
 - `length L ∈ {50, 100, 200, 500, 1000}`, `seeds = 30`.
-- `add_episode(L items)`, `recall_at` по всем позициям; точность позиционного recall
-  = доля `recalled == истинный item на этой позиции`. mean ± std по seeds.
-- Дополнительно подтвердить: bounded window (только последние W=150 элементов как
-  эпизод) даёт recall ≈ 1.0 независимо от полной длины диалога. Это валидирует
-  архитектурное решение «рабочая память = окно».
+- `add_episode(L items)`, `recall_at` for all positions; positional recall accuracy
+  = fraction of `recalled == true item at this position`. mean ± std across seeds.
+- Additionally confirm: bounded window (only last W=150 items as
+  episode) gives recall ≈ 1.0 regardless of the full dialogue length. This validates
+  the architectural decision "working memory = window".
 
-### E3 — SimHash grounding fidelity (воспроизвести corr ~0.99)
-- Взять M реальных текстов (≥500). Посчитать попарные cos в embedding-space и cos
-  соответствующих `ground()`-атомов в hypervector-space. Корреляция Pearson + Spearman
-  между двумя наборами сходств. seeds варьируют projection (30). mean ± std corr.
+### E3 — SimHash grounding fidelity (reproduce corr ~0.99)
+- Take M real texts (≥500). Compute pairwise cos in embedding-space and cos
+  of corresponding `ground()`-atoms in hypervector-space. Pearson + Spearman correlation
+  between the two sets of similarities. seeds vary projection (30). mean ± std corr.
 
-## Вывод
-- Новый файл: `benchmarks/vsa_memory_benchmark.py` с argparse:
-  `--seeds N` (default 30), `--max-n N`, `--quick` (быстрый прогон для проверки).
-- `benchmarks/vsa_memory_results.md` — таблицы mean±std±min по E1/E2/E3 + шапка прогона
-  (дата, версия эмбеддера, n_seeds, D, размер CORPUS, железо/время).
-- `benchmarks/vsa_memory_raw.csv` — строка на каждый (эксперимент, параметр, seed, метрика).
-- **Прогнать реально** (сначала `--quick` для самопроверки, потом полный прогон).
-- Вернуть сводку: таблицы mean±std по E1/E2/E3 и пути к файлам.
+## Output
+- New file: `benchmarks/vsa_memory_benchmark.py` with argparse:
+  `--seeds N` (default 30), `--max-n N`, `--quick` (fast run for testing).
+- `benchmarks/vsa_memory_results.md` — mean±std±min tables for E1/E2/E3 + run header
+  (date, embedder version, n_seeds, D, CORPUS size, hardware/time).
+- `benchmarks/vsa_memory_raw.csv` — one row per (experiment, parameter, seed, metric).
+- **Run for real** (first `--quick` for self-check, then full run).
+- Return summary: mean±std tables for E1/E2/E3 and file paths.
 
-## Детерминизм
-Все seed фиксировать и логировать. Data-seed (CORPUS) отделить от VSA-seed (алгебра).
+## Determinism
+Fix and log all seeds. Data-seed (CORPUS) separated from VSA-seed (algebra).

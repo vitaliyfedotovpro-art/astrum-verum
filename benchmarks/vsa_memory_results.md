@@ -1,6 +1,6 @@
-# VSA Memory Benchmark — результаты
+# VSA Memory Benchmark — Results
 
-## Параметры прогона
+## Run Parameters
 
 - **date_utc**: 2026-05-27 18:22:57 UTC
 - **embedder_model**: paraphrase-multilingual-MiniLM-L12-v2
@@ -25,10 +25,10 @@
 - **e3_time_s**: 16.6
 - **total_time_s**: 1549.3
 
-## E1 — Facts structural recall vs N (ёмкость)
+## E1 — Facts structural recall vs N (Capacity)
 
-| N (фактов) | Mean Acc | Std | Min | Max | n_seeds |
-|------------|----------|-----|-----|-----|---------|
+| N (facts) | Mean Acc | Std | Min | Max | n_seeds |
+|-----------|----------|-----|-----|-----|---------|
 |  1000 | 0.9333 | 0.0167 | 0.8900 | 0.9600 | 30 |
 |  2000 | 0.9225 | 0.0165 | 0.8900 | 0.9500 | 30 |
 |  4000 | 0.8825 | 0.0221 | 0.8250 | 0.9450 | 30 |
@@ -37,9 +37,9 @@
 
 ## E2 — Episode order-recall vs length
 
-### Полный эпизод (accuracy_full)
+### Full episode (accuracy_full)
 
-| L (длина) | Mean Acc | Std | Min | Max | n_seeds |
+| L (length) | Mean Acc | Std | Min | Max | n_seeds |
 |-----------|----------|-----|-----|-----|---------|
 |    50 | 1.0000 | 0.0000 | 1.0000 | 1.0000 | 30 |
 |   100 | 0.9900 | 0.0000 | 0.9900 | 0.9900 | 30 |
@@ -47,9 +47,9 @@
 |   500 | 0.5567 | 0.0271 | 0.4720 | 0.6060 | 30 |
 |  1000 | 0.2365 | 0.0202 | 0.1910 | 0.2710 | 30 |
 
-### Окно W=150 (accuracy_window_W150)
+### Window W=150 (accuracy_window_W150)
 
-| L (полная длина) | Mean Acc | Std | Min | Max | n_seeds |
+| L (full length) | Mean Acc | Std | Min | Max | n_seeds |
 |------------------|----------|-----|-----|-----|---------|
 |    50 | 1.0000 | 0.0000 | 1.0000 | 1.0000 | 30 |
 |   100 | 0.9900 | 0.0000 | 0.9900 | 0.9900 | 30 |
@@ -59,15 +59,15 @@
 
 ## E3 — SimHash grounding fidelity
 
-| Метрика | Mean Corr | Std | Min | Max | n_seeds |
+| Metric | Mean Corr | Std | Min | Max | n_seeds |
 |---------|-----------|-----|-----|-----|---------|
 | pearson | 0.992122 | 0.000176 | 0.991792 | 0.992492 | 30 |
 | spearman | 0.990727 | 0.000225 | 0.990383 | 0.991217 | 30 |
 
-## Замечания о честности
+## Honesty Notes
 
-- Все seed (включая худшие) включены в отчёт.
-- Raw per-seed данные записаны в CSV для перепроверки.
-- Эмбеддинги: реальные, через sentence-transformers.
-- CORPUS: детерминированно сгенерирован из реальных слов (data_seed=12345).
-- Код VSAMemory не модифицирован.
+- All seeds (including worst-case) are included in the report.
+- Raw per-seed data is recorded in CSV for verification.
+- Embeddings: real, via sentence-transformers.
+- CORPUS: deterministically generated from real words (data_seed=12345).
+- VSAMemory code was not modified.
