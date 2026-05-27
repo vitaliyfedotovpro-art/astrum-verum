@@ -107,6 +107,15 @@ not the lattice). A REST API is available via `uvicorn astrum_verum.api:app`.
 
 ---
 
+## Benchmarks
+
+Our rigorous [VSA Memory Benchmark](./benchmarks/vsa_memory_results.md) demonstrates the extreme robustness of the architecture:
+- **Capacity**: Graceful degradation from 93.3% to 74.7% precision across 16,000 independently stored facts at D=10,000.
+- **Episodic Memory**: Order-recall precision remains 96.5% for episodes of length 1,000 when using a bounded working window (W=150).
+- **Semantic Fidelity**: SimHash projection preserves original transformer embedding geometry with a Pearson correlation of 0.992.
+
+---
+
 ## Validation (run it yourself)
 
 ```bash
