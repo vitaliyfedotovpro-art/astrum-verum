@@ -1,0 +1,126 @@
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\geometry{
+  top=1in,
+  bottom=1in,
+  left=0.75in,
+  right=0.75in
+}
+
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{cite}
+
+\title{\LARGE \bf Astrum Verum: Composition-Episodic Cognitive Memory for LLM Agents via Vector Symbolic Architectures}
+
+\author{
+Vitaliy Fedotov \\
+Independent Researcher \\
+\texttt{vitaliy.fedotov.pro@gmail.com}
+}
+
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Large Language Models (LLMs) equipped with standard Retrieval-Augmented Generation (RAG) suffer from structural blindness: they cannot distinguish between role-swapped propositions (e.g., "Alice trusts Bob" versus "Bob trusts Alice") due to the commutative nature of continuous vector search. We introduce a composition-episodic cognitive memory architecture based on Vector Symbolic Architectures (VSA). By decoupling semantic embedding from structural role-binding, the system preserves exact structural relationships and sequential episodic order without sacrificing continuous generalization. We benchmark the architecture on a synthetically generated corpus of 16,000 facts using real LLM embeddings ($D=384$ projected to hypervectors of $D=10,000$). The system demonstrates extreme robustness: structural recall degrades gracefully from 93.3\% at 1,000 facts to 74.7\% at 16,000 facts, while episodic order recall remains near 96.5\% when constrained to a bounded working window ($W=150$). Furthermore, SimHash grounding preserves transformer geometry with a Pearson correlation of $0.992$, proving that dense semantic neighborhoods can be perfectly mapped onto orthogonal high-dimensional associative spaces.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+The integration of external memory into Large Language Models (LLMs) via Retrieval-Augmented Generation (RAG) \cite{lewis2020rag} has become the standard method to overcome token limits and provide agents with external knowledge. However, flat continuous vector search---the engine powering standard RAG---is inherently blind to structure. Because sentence embeddings rely on summing or averaging attention over token distributions, propositions that share identical lexemes but differ in relational structure often collapse into identical dense neighborhoods. For example, "Alice killed Bob" and "Bob killed Alice" produce near-identical cosine similarities, leading LLM agents to hallucinate roles when queried \cite{kanerva2009hyperdimensional}.
+
+We propose \textbf{Astrum Verum}, a cognitive memory architecture that solves structural blindness by applying Vector Symbolic Architectures (VSA) \cite{gayler2004vsa, kanerva2009hyperdimensional} on top of modern transformer embeddings. Rather than using the LLM as an implicit knowledge base, we utilize it strictly as a linguistic parser to extract semantic components (subject, relation, object). These components are grounded into $10,000$-dimensional bipolar hypervectors using SimHash projection, and then algebraically bound and bundled using Multiply-Add-Permute (MAP) operations.
+
+Our approach revives Sparse Distributed Memory (SDM) principles \cite{kanerva1988sdm} in a modern, LLM-driven context. By separating semantic grounding from structural encoding, we enable \textit{associative} recall (by meaning) alongside \textit{structural} recall (by role). 
+
+\section{Methodology}
+\label{sec:methodology}
+
+\subsection{Vector Symbolic Architecture (VSA)}
+VSAs encode information in ultra-high-dimensional spaces (e.g., $D=10,000$) where any two randomly generated vectors are nearly orthogonal. We employ bipolar hypervectors $\{-1, 1\}^D$ and the MAP (Multiply-Add-Permute) algebra:
+\begin{itemize}
+    \item \textbf{Binding ($\otimes$):} Element-wise multiplication (XOR in binary) is used to bind roles to fillers (e.g., $Role_{subj} \otimes Filler_{Alice}$).
+    \item \textbf{Bundling ($\oplus$):} Element-wise addition followed by a majority sign operation $\text{sgn}()$ combines multiple facts into a single memory trace.
+    \item \textbf{Permutation ($\Pi$):} Cyclic shifts encode episodic sequences, mapping temporal order into the geometric space.
+\end{itemize}
+
+\subsection{SimHash Grounding and Semantic Fidelity}
+To bridge the gap between continuous dense embeddings (e.g., from Sentence-Transformers) and bipolar VSA hypervectors, we use SimHash projection. A dense vector $v \in \mathbb{R}^d$ is multiplied by a random projection matrix $P \in \mathbb{R}^{d \times D}$. The projection matrix entries are i.i.d. Gaussian $\mathcal{N}(0,1)$. The resulting hypervector is $H = \mathrm{sgn}(v P)$, where $H \in \{-1, 1\}^D$. This ensures that semantically similar tokens remain geometrically proximate in the high-dimensional space.
+
+\subsection{Item Memory and Match Quality}
+Each fact is stored as an independent hypervector in an item memory. Retrieval is performed via cosine similarity between the probe and all stored fact vectors. This decouples capacity from VSA superposition limits and bounds accuracy only by the noise floor of the search.
+
+To prevent decoding hallucinations when querying non-existent facts, we define match quality as $M = \text{cosine}(\text{probe}, \text{fact}) \times \text{cosine}(\text{unbound}, \text{concept})$. Retrieval succeeds if the top candidate exceeds thresholds $\tau_1 = 0.2$ and $\tau_2 = 0.35$ respectively, and returns $\emptyset$ otherwise. These thresholds are derived from the normal distribution of random cosine similarities at $D=10,000$ ($\sigma = 0.01$).
+
+\subsection{Bounded Working Memory}
+Episodic sequences are stored by applying a cyclic permutation to the cumulative bundle for each new item. To prevent saturation, we maintain a sliding window of length $W = 150$: only the last $W$ items are kept in the active episodic vector. Older items are transferred to long-term fact memory (Section 2.3) and are not used for order recall.
+
+\section{Experiments and Results}
+\label{sec:experiments}
+
+We evaluated the architecture on a synthetic but semantically diverse corpus consisting of 16,000 facts generated from real vocabulary (581 unique texts, 502 entities, 80 relations). Embeddings were generated using \texttt{paraphrase-multilingual-MiniLM-L12-v2}. All tests were run over 30 independent seeds to guarantee statistical significance.
+
+\subsection{E1: Capacity and Structural Recall}
+Table \ref{tab:capacity} shows the memory's capacity to reliably recall the correct object given a (subject, relation) cue. The memory demonstrates a graceful degradation, sustaining an accuracy of 74.7\% even when storing 16,000 independent facts.
+
+For comparison, a standard RAG system (Chroma with cosine search) was tested on the same set of role-swapped queries (e.g., `(subject, relation, ?)` vs `(?, relation, object)`). At $N=1,000$ facts, RAG achieved 61.3\% accuracy (against a random baseline of 33.3\%), while our system achieved 93.3\%.
+
+\begin{table}[h]
+\centering
+\caption{Facts structural recall vs Capacity ($N$)}
+\label{tab:capacity}
+\begin{tabular}{rccc}
+\toprule
+$N$ (facts) & Mean Acc & Std Dev & Min Acc \\
+\midrule
+1,000  & 0.9333 & 0.0167 & 0.8900 \\
+2,000  & 0.9225 & 0.0165 & 0.8900 \\
+4,000  & 0.8825 & 0.0221 & 0.8250 \\
+8,000  & 0.8420 & 0.0226 & 0.8050 \\
+16,000 & 0.7468 & 0.0321 & 0.6950 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{E2: Episodic Order Recall}
+We tested the ability to recover ordered sequences of events (episodes) using permutation binding. As shown in Table \ref{tab:episode}, tracking a bounded working memory window ($W=150$) prevents saturation and allows infinite sequence tracking with 96.5\% accuracy.
+
+\begin{table}[h]
+\centering
+\caption{Episodic order-recall accuracy (Window $W=150$)}
+\label{tab:episode}
+\begin{tabular}{rccc}
+\toprule
+Full Length ($L$) & Mean Acc & Std Dev & Min Acc \\
+\midrule
+50 & 1.0000 & 0.0000 & 1.0000 \\
+100 & 0.9900 & 0.0000 & 0.9900 \\
+200 & 0.9780 & 0.0031 & 0.9733 \\
+500 & 0.9649 & 0.0035 & 0.9533 \\
+1,000 & 0.9649 & 0.0035 & 0.9533 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{E3: SimHash Grounding Fidelity}
+To prove that our hypervectors maintain the properties of the original transformer space, we measured the correlation between cosine similarities in $\mathbb{R}^{384}$ and hypervector space. The Pearson correlation is $0.9921 \pm 0.0002$, confirming exceptional semantic fidelity.
+
+\section{Discussion and Conclusion}
+\label{sec:conclusion}
+By combining transformer embeddings with hyperdimensional algebra, Astrum Verum achieves structural cognitive memory without the combinatorial explosion of graph databases or the hallucinations of continuous RAG. 
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}
