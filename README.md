@@ -1,4 +1,4 @@
-# Astrum Verum
+ш# Astrum Verum
 
 **Composition-episodic cognitive memory for AI agents — and an honest record of how it got here.**
 
@@ -160,4 +160,4 @@ on messy real dialogue is the next open problem. See design doc §5.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+AGPLv3— see [LICENSE](LICENSE).
