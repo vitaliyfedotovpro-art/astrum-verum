@@ -61,7 +61,7 @@ Recent neuro-vector-symbolic architectures have successfully bridged neural netw
 
 \begin{figure}[t]
     \centering
-    \vspace*{1cm}
+    \resizebox{\textwidth}{!}{
     \begin{tikzpicture}[
         node distance=1.5cm and 2cm,
         auto,
@@ -77,22 +77,22 @@ Recent neuro-vector-symbolic architectures have successfully bridged neural netw
         arrow/.style={->, thick, shorten >=1pt},
         label/.style={font=\sffamily\scriptsize\itshape, gray!80}
     ]
-        
+
         % Nodes - Row 1
         \node [io] (input) {\textbf{Input}\\Natural Language};
-        
+
         % Nodes - Row 2
         \node [process, below=of input, yshift=-0.5cm] (ext) {\textbf{Linguistic Parser}\\LLM Triplet Extraction\\$(s, r, o)$};
         \node [process, right=of ext, xshift=2cm] (ground) {\textbf{Semantic Grounding}\\SimHash Projection\\$d \rightarrow 10^4 D$};
-        
+
         % Nodes - Row 3
         \node [operator, below=of ground, yshift=-0.5cm] (bind) {$\otimes$};
         \node [operator, left=of bind, xshift=-0.5cm] (bundle) {$\oplus$};
         \node [algebra, left=of bundle, xshift=-0.5cm] (map) {\textbf{VSA Algebra}\\Multiply-Add-Permute\\(Binding \& Bundling)};
-        
+
         % Nodes - Row 4
         \node [storage, left=of ext, xshift=-2.5cm] (mem) {\textbf{Item Memory}\\Structured\\Hypervector Store};
-        
+
         % Nodes - Row 5
         \node [process, below=of mem, yshift=-1cm] (mq) {\textbf{Match Quality}\\Relevance $\times$ Clarity\\Retrieval Filter};
         \node [io, below=of mq, yshift=-0.5cm] (output) {\textbf{Output}\\Verified Recall};
@@ -102,13 +102,13 @@ Recent neuro-vector-symbolic architectures have successfully bridged neural netw
         \draw [arrow] (ext) -- node[anchor=south, label] {Extracted Triplets} (ground);
         \draw [arrow] (ground) -- node[anchor=left, label] {Grounding} (bind);
         \draw [arrow] (bind) -- node[anchor=south, label] {Binding} (bundle);
-        
+
         \draw [arrow, dashed] (map) -- (bundle);
         \draw [arrow] (bundle) -| node[anchor=south, pos=0.8, label] {Encoded Fact $H$} (mem);
-        
+
         \draw [arrow] (mem) -- node[anchor=left, label] {Structural Probe} (mq);
         \draw [arrow] (mq) -- (output);
-        
+
         % Background labels/groups
         \begin{scope}[on background layer]
             \draw [dashed, blue!40, fill=blue!5, rounded corners=10pt] 
@@ -121,15 +121,14 @@ Recent neuro-vector-symbolic architectures have successfully bridged neural netw
         \end{scope}
 
     \end{tikzpicture}
+    }
     \caption{Detailed architectural pipeline of Astrum Verum. The system operates in two main stages: (A) Semantic Encoding, where natural language is parsed into symbolic triplets and projected into a $10,000$-dimensional bipolar space via SimHash; and (B) Structural Binding, where VSA operators ($\otimes, \oplus, \Pi$) bind roles to fillers. Unlike traditional VSA architectures that rely on global superposition, we utilize an Item Memory store combined with a dual-threshold Match Quality metric to eliminate decoding hallucinations and maintain high retrieval precision at scale.}
     \label{fig:arch}
 \end{figure}
-\clearpage
 
 \subsection{SimHash Grounding and Semantic Fidelity}
-
-\subsection{SimHash Grounding and Semantic Fidelity}
-To bridge the gap between continuous dense embeddings (e.g., from Sentence-Transformers) and bipolar VSA hypervectors, we use SimHash projection \cite{charikar2002similarity}. A dense vector $v \in \mathbb{R}^d$ is multiplied by a random projection matrix $P \in \mathbb{R}^{d \times D}$. The projection matrix entries are i.i.d. Gaussian $P_{ij} \sim \mathcal{N}(0,1)$. The resulting hypervector is:
+To bridge the gap between continuous dense embeddings
+ (e.g., from Sentence-Transformers) and bipolar VSA hypervectors, we use SimHash projection \cite{charikar2002similarity}. A dense vector $v \in \mathbb{R}^d$ is multiplied by a random projection matrix $P \in \mathbb{R}^{d \times D}$. The projection matrix entries are i.i.d. Gaussian $P_{ij} \sim \mathcal{N}(0,1)$. The resulting hypervector is:
 \begin{equation}
     H = \mathrm{sgn}(v P), \quad H \in \{-1, 1\}^D
 \end{equation}
