@@ -25,7 +25,7 @@ If the AGPL-3.0 requirements are not compatible with your business model (e.g., 
 
 Each commercial license is tailored to the specific needs of the organization. To discuss terms, pricing, and volume licensing, please reach out with a brief description of your use case:
 
-**Contact:** [fedotov_vitaliy@icloud.com](mailto:fedotov_vitaliy@icloud.com)
+**Contact:** [fedotov_vitaliy@icloud.com](mailto:astrumproject@astrumverum.com)
 
 ---
 *Note: As the sole author and copyright holder, I maintain the right to offer the software under different terms to different parties.*
