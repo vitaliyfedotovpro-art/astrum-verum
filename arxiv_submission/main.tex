@@ -16,6 +16,8 @@
 \usepackage{booktabs}
 \usepackage{hyperref}
 \usepackage{cite}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, positioning, calc}
 
 \title{\LARGE \bf Astrum Verum: Composition-Episodic Cognitive Memory for LLM Agents via Vector Symbolic Architectures}
 
@@ -58,8 +60,55 @@ Recent neuro-vector-symbolic architectures have successfully bridged neural netw
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.9\textwidth]{astrum_verum_vsa_lattice.png}
-    \caption{The Astrum Verum Architecture: From continuous transformer embeddings to structured VSA hypervectors. Semantic components are extracted, grounded via SimHash, and bound into a compositional fact vector.}
+    \begin{tikzpicture}[node distance=1.5cm, auto,
+        block/.style={rectangle, draw, fill=blue!10, text width=6em, text centered, rounded corners, minimum height=3em},
+        op/.style={circle, draw, fill=orange!20, minimum size=2em, text centered},
+        cloud/.style={draw, ellipse, fill=gray!10, node distance=2.5cm, minimum height=2em},
+        line/.style={draw, -latex'}]
+        
+        % Input & Extraction
+        \node [cloud] (input) {Input Sentence};
+        \node [block, below of=input] (llm) {LLM Triplet Extractor};
+        \node [below of=llm, node distance=1.2cm] (triplet) {(S, R, O)};
+        
+        % Grounding
+        \node [block, right of=llm, node distance=3.5cm] (simhash) {SimHash Grounding ($10^4 D$)};
+        
+        % Binding
+        \node [op, below of=simhash, node distance=2cm] (bind) {$\otimes$};
+        \node [left of=bind, node distance=1.5cm] (roles) {Roles};
+        
+        % Bundling
+        \node [op, below of=bind, node distance=1.5cm] (bundle) {$\oplus$};
+        \node [right of=bundle, node distance=2cm] (sign) {$\text{sgn}(\cdot)$};
+        
+        % Storage
+        \node [block, left of=bundle, node distance=3.5cm] (memory) {Item Memory (Vector Store)};
+        
+        % Retrieval
+        \node [block, below of=memory, node distance=2cm] (mq) {Match Quality Filter};
+        \node [cloud, below of=mq, node distance=1.5cm] (output) {Verified Concept};
+
+        % Connectors
+        \path [line] (input) -- (llm);
+        \path [line] (llm) -- (simhash);
+        \path [line] (simhash) -- (bind);
+        \path [line] (roles) -- (bind);
+        \path [line] (bind) -- (bundle);
+        \path [line] (bundle) -| (memory);
+        \path [line] (sign) -- (bundle);
+        \path [line] (memory) -- (mq);
+        \path [line] (mq) -- (output);
+        
+        % Boxes for Phases
+        \draw [dashed, gray] ($(llm.north west)+(-0.5,0.3)$)$ rectangle ($(simhash.south east)+(0.5,-0.3)$);
+        \node at ($(llm.north west)+(-0.2,0.5)$) [gray, font=\small] {Phase A: Extraction \& Grounding};
+        
+        \draw [dashed, orange] ($(bind.north west)+(-2.2,0.3)$)$ rectangle ($(bundle.south east)+(2.5,-0.3)$);
+        \node at ($(bind.north west)+(-1.8,0.5)$) [orange, font=\small] {Phase B: VSA Algebra};
+
+    \end{tikzpicture}
+    \caption{The Astrum Verum Architecture (Phase 2): Continuous semantic grounding via SimHash followed by discrete structural binding. Unlike flat RAG, facts are stored as structured hypervectors in an Item Memory, enabling role-sensitive retrieval via the Match Quality metric.}
     \label{fig:arch}
 \end{figure}
 
@@ -78,7 +127,7 @@ We employ bipolar hypervectors $\{-1, 1\}^D$ ($D=10,000$) and the MAP algebra:
     \item \textbf{Permutation ($\Pi$):} Cyclic shifts encode episodic sequences, mapping temporal order into the geometric space.
 \end{itemize}
 
-A fact is encoded as a bundled hypervector of bound roles:
+A fact is encoded as a bundled hypervector of bound roles, as illustrated in the architecture overview (Figure \ref{fig:arch}):
 \begin{equation}
     Fact = \mathrm{sgn}(R_{subj} \otimes S + R_{rel} \otimes R + R_{obj} \otimes O)
 \end{equation}
@@ -88,11 +137,15 @@ A known challenge in VSA is capacity collapse: bundling thousands of facts into 
 
 However, searching across an Item Memory introduces the problem of \textit{Decoded Clarity Hallucinations}. When unbinding a retrieved fact to find an answer, the expected cosine similarity for a true signal is $0.5$ ($50\sigma$ above the noise floor of $\sigma=0.01$). But across a large dataset, a non-relevant fact might randomly produce a noisy, unbound vector that happens to align closely with a dictionary concept (e.g., score = $0.502$), outscoring the true fact (score = $0.493$).
 
-To prevent these decoding hallucinations, we define \textbf{Match Quality} ($M$) as the product of global relevance and local clarity:
+To prevent these decoding hallucinations, we define \textbf{Match Quality} ($M$) as the product of global relevance and local clarity. Let $concept^*$ be the candidate from the codebook $\mathcal{C}$ that maximizes decoding clarity:
 \begin{equation}
-    M = \text{cosine}(\text{probe}, \text{fact}) \times \text{cosine}(\text{unbound}, \text{concept})
+    concept^* = \text{argmax}_{c \in \mathcal{C}} \text{cosine}(\text{unbound}, c)
 \end{equation}
-Retrieval succeeds only if the top candidate exceeds dual thresholds: $\tau_1 = 0.2$ for fact relevance and $\tau_2 = 0.35$ for decode clarity. If breached, the memory returns $\emptyset$. This formulation enables an \textbf{Early Exit} strategy: if the first retrieved candidate passes the thresholds, search terminates immediately, yielding a roughly $5\times$ speedup during retrieval.
+The final score is defined as:
+\begin{equation}
+    M = \text{cosine}(\text{probe}, \text{fact}) \times \text{cosine}(\text{unbound}, concept^*)
+\end{equation}
+Retrieval succeeds only if the top candidate exceeds dual thresholds: $\tau_1 = 0.2$ for fact relevance and $\tau_2 = 0.35$ for decode clarity. As shown in Figure \ref{fig:results}, this metric maintains a clear separation between positive matches and noise. This formulation enables an \textbf{Early Exit} strategy: if the first retrieved candidate passes the thresholds, search terminates immediately, yielding a roughly $5\times$ speedup during retrieval (achieving $\sim 0.15$s per query on a single CPU core at $N=16,000$).
 
 \subsection{Bounded Working Memory}
 Episodic sequences are stored by applying a cyclic permutation to the cumulative bundle for each new item. To prevent vector saturation, we maintain a sliding window of length $W = 150$: only the last $W$ items are kept in the active episodic vector. Older items are transferred to the long-term Item Memory and are not used for order recall, effectively simulating the transition from working to long-term memory.
@@ -167,10 +220,13 @@ While Astrum Verum significantly improves structural recall, several limitations
 \textbf{Fixed Dimensionality:} We utilized $D=10,000$ based on classical HDC benchmarks. While this provides a high noise floor, it introduces significant computational overhead compared to flat RAG. Future work will investigate the trade-offs between dimensionality, capacity, and retrieval speed, particularly utilizing hardware acceleration \cite{kleyko2022vector}.
 
 \section{Conclusion}
-\label{sec:conclusion}
-By combining transformer embeddings with hyperdimensional algebra, Astrum Verum achieves structural cognitive memory without the combinatorial explosion of graph databases or the hallucinations of continuous RAG. 
+By combining transformer embeddings
+ with hyperdimensional algebra, Astrum Verum achieves structural cognitive memory without the combinatorial explosion of graph databases or the hallucinations of continuous RAG. 
 
-The introduction of the Match Quality metric solves the problem of decoded clarity hallucinations, ensuring that the system returns strict boolean states ($\emptyset$ or a grounded concept) rather than forced approximations. Furthermore, utilizing an Item Memory array bypasses the traditional superposition limits of VSA. Future work will explore the integration of this cognitive memory into end-to-end LLM agent loops, hardware acceleration \cite{kleyko2022vector}, and utilizing modern VSA frameworks \cite{heddes2022torchhd} to optimize the real-time extraction of symbolic triplets from conversational context.
+The introduction of the Match Quality metric solves the problem of decoded clarity hallucinations, ensuring that the system returns strict boolean states ($\emptyset$ or a grounded concept) rather than forced approximations. Furthermore, utilizing an Item Memory array bypasses the traditional superposition limits of VSA. 
+
+\textbf{Integration and Validation:} To evaluate the practical utility of this architecture, we have initiated the integration and performance testing of Astrum Verum as a specialized cognitive skill within the \textbf{Google Antigravity autonomous agent framework}. This phase aims to validate the effectiveness of structural hypervectors for verifiable fact-recall and episodic tracking in real-world autonomous orchestrations. Future work will involve further optimization of the symbolic extraction pipeline and exploring hardware-accelerated VSA operations \cite{kleyko2022vector}.
+
 
 \bibliographystyle{plain}
 \bibliography{references}
