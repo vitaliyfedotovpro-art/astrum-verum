@@ -160,20 +160,21 @@ The final score is defined as:
 \begin{equation}
     M = \text{cosine}(\text{probe}, \text{fact}) \times \text{cosine}(\text{unbound}, concept^*)
 \end{equation}
-Retrieval succeeds only if the top candidate exceeds dual thresholds: $\tau_1 = 0.2$ for fact relevance and $\tau_2 = 0.35$ for decode clarity. As shown in Figure \ref{fig:results}, this metric maintains a clear separation between positive matches and noise. This formulation enables an \textbf{Early Exit} strategy: if the first retrieved candidate passes the thresholds, search terminates immediately, yielding a roughly $5\times$ speedup during retrieval (achieving $\sim 0.15$s per query on a single CPU core at $N=16,000$).
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{vsa_distributions.png}
+    \caption{Empirical distributions of Match Quality ($M$). The system maintains a clear separation between true signals (positives) and noise (negatives), enabling high-precision retrieval across large fact stores.}
+    \label{fig:vsa_distributions}
+\end{figure}
+
+Retrieval succeeds only if the top candidate exceeds dual thresholds: $\tau_1 = 0.2$ for fact relevance and $\tau_2 = 0.35$ for decode clarity. As shown in Figure \ref{fig:vsa_distributions}, this metric maintains a clear separation between positive matches and noise. This formulation enables an \textbf{Early Exit} strategy: if the first retrieved candidate passes the thresholds, search terminates immediately, yielding a roughly $5\times$ speedup during retrieval (achieving $\sim 0.15$s per query on a single CPU core at $N=16,000$).
 
 \subsection{Bounded Working Memory}
 Episodic sequences are stored by applying a cyclic permutation to the cumulative bundle for each new item. To prevent vector saturation, we maintain a sliding window of length $W = 150$: only the last $W$ items are kept in the active episodic vector. Older items are transferred to the long-term Item Memory and are not used for order recall, effectively simulating the transition from working to long-term memory.
 
 \section{Experiments and Results}
 \label{sec:experiments}
-
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.7\textwidth]{vsa_distributions.png}
-    \caption{Empirical distributions of Match Quality ($M$). The system maintains a clear separation between true signals (positives) and noise (negatives), enabling high-precision retrieval across large fact stores.}
-    \label{fig:results}
-\end{figure}
 
 We evaluated the architecture on a synthetic but semantically diverse corpus
  consisting of 16,000 facts generated from real vocabulary (581 unique texts, 502 entities, 80 relations). Embeddings were generated using \texttt{paraphrase-multilingual-MiniLM-L12-v2}. All tests were run over 30 independent seeds to guarantee statistical significance, with parameters $D=10,000$ and $d=384$.
