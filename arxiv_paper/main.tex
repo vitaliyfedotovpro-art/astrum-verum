@@ -60,55 +60,60 @@ Recent neuro-vector-symbolic architectures have successfully bridged neural netw
 
 \begin{figure}[t]
     \centering
-    \begin{tikzpicture}[node distance=1.5cm, auto,
-        block/.style={rectangle, draw, fill=blue!10, text width=6em, text centered, rounded corners, minimum height=3em},
-        op/.style={circle, draw, fill=orange!20, minimum size=2em, text centered},
-        cloud/.style={draw, ellipse, fill=gray!10, node distance=2.5cm, minimum height=2em},
-        line/.style={draw, -latex'}]
+    \begin{tikzpicture}[
+        node distance=1.8cm,
+        auto,
+        font=\sffamily\small,
+        >=latex,
+        % Styles
+        base/.style={draw, thick, align=center, minimum height=3.5em, rounded corners=3pt},
+        process/.style={base, fill=blue!15, text width=7em},
+        algebra/.style={base, fill=orange!15, text width=6em},
+        storage/.style={base, fill=green!15, text width=7em, double},
+        operator/.style={circle, draw, thick, fill=white, inner sep=2pt, minimum size=1.8em},
+        io/.style={ellipse, draw, thick, fill=gray!5, text width=6em, align=center},
+        arrow/.style={->, thick, shorten >=1pt},
+        label/.style={font=\sffamily\scriptsize\itshape, gray!80}
+    ]
         
-        % Input & Extraction
-        \node [cloud] (input) {Input Sentence};
-        \node [block, below of=input] (llm) {LLM Triplet Extractor};
-        \node [below of=llm, node distance=1.2cm] (triplet) {(S, R, O)};
+        % Nodes
+        \node [io] (input) {Natural Language Input};
+        \node [process, below of=input, yshift=-0.5cm] (ext) {\textbf{LLM Parser}\\Triplet Extraction\\$(s, r, o)$};
+        \node [process, right of=ext, node distance=4.5cm] (ground) {\textbf{SimHash}\\Grounding\\$d \rightarrow 10^4 D$};
         
-        % Grounding
-        \node [block, right of=llm, node distance=3.5cm] (simhash) {SimHash Grounding ($10^4 D$)};
+        \node [operator, below of=ground, yshift=-1cm] (bind) {$\otimes$};
+        \node [operator, below of=bind, yshift=-0.8cm] (bundle) {$\oplus$};
+        \node [algebra, left of=bundle, node distance=2cm, xshift=-1cm] (map) {\textbf{VSA Algebra}\\Multiply-Add-Permute};
         
-        % Binding
-        \node [op, below of=simhash, node distance=2cm] (bind) {$\otimes$};
-        \node [left of=bind, node distance=1.5cm] (roles) {Roles};
-        
-        % Bundling
-        \node [op, below of=bind, node distance=1.5cm] (bundle) {$\oplus$};
-        \node [right of=bundle, node distance=2cm] (sign) {$\text{sgn}(\cdot)$};
-        
-        % Storage
-        \node [block, left of=bundle, node distance=3.5cm] (memory) {Item Memory (Vector Store)};
-        
-        % Retrieval
-        \node [block, below of=memory, node distance=2cm] (mq) {Match Quality Filter};
-        \node [cloud, below of=mq, node distance=1.5cm] (output) {Verified Concept};
+        \node [storage, left of=ext, node distance=4.5cm] (mem) {\textbf{Item Memory}\\Structured\\Hypervector Store};
+        \node [process, below of=mem, yshift=-1.5cm] (mq) {\textbf{Match Quality}\\Relevance $\times$ Clarity\\Filter};
+        \node [io, below of=mq, yshift=-0.5cm] (output) {Verified\\Cognitive Recall};
 
-        % Connectors
-        \path [line] (input) -- (llm);
-        \path [line] (llm) -- (simhash);
-        \path [line] (simhash) -- (bind);
-        \path [line] (roles) -- (bind);
-        \path [line] (bind) -- (bundle);
-        \path [line] (bundle) -| (memory);
-        \path [line] (sign) -- (bundle);
-        \path [line] (memory) -- (mq);
-        \path [line] (mq) -- (output);
+        % Paths
+        \draw [arrow] (input) -- (ext);
+        \draw [arrow] (ext) -- node[anchor=south, label] {Triplets} (ground);
+        \draw [arrow] (ground) -- node[anchor=left, label] {Grounding} (bind);
+        \draw [arrow] (bind) -- node[anchor=left, label] {Binding} (bundle);
         
-        % Boxes for Phases
-        \draw [dashed, gray] ($(llm.north west)+(-0.5,0.3)$)$ rectangle ($(simhash.south east)+(0.5,-0.3)$);
-        \node at ($(llm.north west)+(-0.2,0.5)$) [gray, font=\small] {Phase A: Extraction \& Grounding};
+        \draw [arrow, dashed] (map) |- (bind);
+        \draw [arrow] (bundle) -| node[anchor=south, pos=0.8, label] {Fact $H$} (mem);
         
-        \draw [dashed, orange] ($(bind.north west)+(-2.2,0.3)$)$ rectangle ($(bundle.south east)+(2.5,-0.3)$);
-        \node at ($(bind.north west)+(-1.8,0.5)$) [orange, font=\small] {Phase B: VSA Algebra};
+        \draw [arrow] (mem) -- node[anchor=left, label] {Probe} (mq);
+        \draw [arrow] (mq) -- (output);
+        
+        % Background labels/groups
+        \begin{scope}[on background layer]
+            \draw [dashed, blue!40, fill=blue!5, rounded corners=5pt] 
+                ($(ext.north west)+(-0.3,0.5)$) rectangle ($(ground.south east)+(0.3,-0.5)$);
+            \node [blue!70, font=\bfseries\footnotesize] at ($(ext.north west)+(1.5,0.8)$) {SEMANTIC ENCODING};
+
+            \draw [dashed, orange!40, fill=orange!5, rounded corners=5pt] 
+                ($(bind.north west)+(-3.5,0.4)$) rectangle ($(bundle.south east)+(0.5,-0.4)$);
+            \node [orange!70, font=\bfseries\footnotesize] at ($(bind.north west)+(-1.5,0.6)$) {STRUCTURAL BINDING};
+        \end{scope}
 
     \end{tikzpicture}
-    \caption{The Astrum Verum Architecture (Phase 2): Continuous semantic grounding via SimHash followed by discrete structural binding. Unlike flat RAG, facts are stored as structured hypervectors in an Item Memory, enabling role-sensitive retrieval via the Match Quality metric.}
+    \caption{The Astrum Verum Architecture: A hybrid neuro-symbolic pipeline. Dense transformer embeddings are grounded into bipolar hypervectors via SimHash and then algebraically bound into compositional facts. The Item Memory architecture decouples capacity from VSA interference limits, while the Match Quality metric ensures strict retrieval fidelity.}
     \label{fig:arch}
 \end{figure}
 
