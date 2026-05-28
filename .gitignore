@@ -173,3 +173,4 @@ data/
 /tests/temp_data/
 /var/
 /tmp/
+*.zip
