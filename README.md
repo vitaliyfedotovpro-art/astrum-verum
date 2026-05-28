@@ -158,6 +158,15 @@ Research library, not yet wired into a production agent. VSA **adds** structural
 recall — it does not replace nearest-neighbour search. Extraction/normalization
 on messy real dialogue is the next open problem. See design doc §5.
 
+## Commercial Licensing
+
+This project is dual-licensed to balance community open-source use with professional commercial requirements:
+
+- **Open Source:** For community projects and research, it is licensed under **AGPL-3.0**.
+- **Commercial:** If you wish to use Astrum Verum in a proprietary product, SaaS, or closed-source environment without the copyleft obligations of AGPL, a commercial license is available.
+
+For licensing inquiries and enterprise support, please contact: [fedotov_vitaliy@icloud.com](mailto:fedotov_vitaliy@icloud.com)
+
 ## License
 
-AGPLv3— see [LICENSE](LICENSE).
+GNU AGPLv3 — see [LICENSE](LICENSE).
