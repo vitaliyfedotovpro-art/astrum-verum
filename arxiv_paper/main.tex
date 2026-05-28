@@ -61,41 +61,47 @@ Recent neuro-vector-symbolic architectures have successfully bridged neural netw
 \begin{figure}[t]
     \centering
     \begin{tikzpicture}[
-        node distance=1.8cm,
+        node distance=1.2cm and 1.5cm,
         auto,
         font=\sffamily\small,
         >=latex,
         % Styles
         base/.style={draw, thick, align=center, minimum height=3.5em, rounded corners=3pt},
-        process/.style={base, fill=blue!15, text width=7em},
-        algebra/.style={base, fill=orange!15, text width=6em},
-        storage/.style={base, fill=green!15, text width=7em, double},
-        operator/.style={circle, draw, thick, fill=white, inner sep=2pt, minimum size=1.8em},
-        io/.style={ellipse, draw, thick, fill=gray!5, text width=6em, align=center},
+        process/.style={base, fill=blue!15, text width=8em},
+        algebra/.style={base, fill=orange!15, text width=7em},
+        storage/.style={base, fill=green!15, text width=8em, double},
+        operator/.style={circle, draw, thick, fill=white, inner sep=2pt, minimum size=2em},
+        io/.style={ellipse, draw, thick, fill=gray!5, text width=7em, align=center},
         arrow/.style={->, thick, shorten >=1pt},
         label/.style={font=\sffamily\scriptsize\itshape, gray!80}
     ]
         
-        % Nodes
+        % Nodes - Row 1
         \node [io] (input) {Natural Language Input};
-        \node [process, below of=input, yshift=-0.5cm] (ext) {\textbf{LLM Parser}\\Triplet Extraction\\$(s, r, o)$};
-        \node [process, right of=ext, node distance=4.5cm] (ground) {\textbf{SimHash}\\Grounding\\$d \rightarrow 10^4 D$};
         
-        \node [operator, below of=ground, yshift=-1cm] (bind) {$\otimes$};
-        \node [operator, below of=bind, yshift=-0.8cm] (bundle) {$\oplus$};
-        \node [algebra, left of=bundle, node distance=2cm, xshift=-1cm] (map) {\textbf{VSA Algebra}\\Multiply-Add-Permute};
+        % Nodes - Row 2
+        \node [process, below=of input] (ext) {\textbf{LLM Parser}\\Triplet Extraction\\$(s, r, o)$};
+        \node [process, right=of ext, xshift=1.5cm] (ground) {\textbf{SimHash}\\Grounding\\$d \rightarrow 10^4 D$};
         
-        \node [storage, left of=ext, node distance=4.5cm] (mem) {\textbf{Item Memory}\\Structured\\Hypervector Store};
-        \node [process, below of=mem, yshift=-1.5cm] (mq) {\textbf{Match Quality}\\Relevance $\times$ Clarity\\Filter};
-        \node [io, below of=mq, yshift=-0.5cm] (output) {Verified\\Cognitive Recall};
+        % Nodes - Row 3
+        \node [operator, below=of ground] (bind) {$\otimes$};
+        \node [operator, left=of bind, xshift=0.5cm] (bundle) {$\oplus$};
+        \node [algebra, left=of bundle] (map) {\textbf{VSA Algebra}\\MAP Operations};
+        
+        % Nodes - Row 4
+        \node [storage, left=of ext, xshift=-1.5cm] (mem) {\textbf{Item Memory}\\Structured\\Hypervector Store};
+        
+        % Nodes - Row 5
+        \node [process, below=of mem, yshift=-0.5cm] (mq) {\textbf{Match Quality}\\Relevance $\times$ Clarity\\Filter};
+        \node [io, below=of mq] (output) {Verified\\Cognitive Recall};
 
         % Paths
         \draw [arrow] (input) -- (ext);
         \draw [arrow] (ext) -- node[anchor=south, label] {Triplets} (ground);
         \draw [arrow] (ground) -- node[anchor=left, label] {Grounding} (bind);
-        \draw [arrow] (bind) -- node[anchor=left, label] {Binding} (bundle);
+        \draw [arrow] (bind) -- node[anchor=south, label] {Binding} (bundle);
         
-        \draw [arrow, dashed] (map) |- (bind);
+        \draw [arrow, dashed] (map) -- (bundle);
         \draw [arrow] (bundle) -| node[anchor=south, pos=0.8, label] {Fact $H$} (mem);
         
         \draw [arrow] (mem) -- node[anchor=left, label] {Probe} (mq);
@@ -103,13 +109,13 @@ Recent neuro-vector-symbolic architectures have successfully bridged neural netw
         
         % Background labels/groups
         \begin{scope}[on background layer]
-            \draw [dashed, blue!40, fill=blue!5, rounded corners=5pt] 
-                ($(ext.north west)+(-0.3,0.5)$) rectangle ($(ground.south east)+(0.3,-0.5)$);
-            \node [blue!70, font=\bfseries\footnotesize] at ($(ext.north west)+(1.5,0.8)$) {SEMANTIC ENCODING};
+            \draw [dashed, blue!40, fill=blue!5, rounded corners=8pt] 
+                ($(ext.north west)+(-0.3,0.4)$) rectangle ($(ground.south east)+(0.3,-0.4)$);
+            \node [blue!70, font=\bfseries\footnotesize] at ($(ext.north west)+(1.8,0.7)$) {SEMANTIC ENCODING};
 
-            \draw [dashed, orange!40, fill=orange!5, rounded corners=5pt] 
-                ($(bind.north west)+(-3.5,0.4)$) rectangle ($(bundle.south east)+(0.5,-0.4)$);
-            \node [orange!70, font=\bfseries\footnotesize] at ($(bind.north west)+(-1.5,0.6)$) {STRUCTURAL BINDING};
+            \draw [dashed, orange!40, fill=orange!5, rounded corners=8pt] 
+                ($(map.north west)+(-0.3,0.4)$) rectangle ($(bind.south east)+(0.3,-0.4)$);
+            \node [orange!70, font=\bfseries\footnotesize] at ($(map.north west)+(1.5,0.7)$) {STRUCTURAL BINDING};
         \end{scope}
 
     \end{tikzpicture}
