@@ -72,17 +72,41 @@ class TestEpisodes:
 
 
 class TestNormalization:
-    def test_merge_variants(self):
+    def test_string_identity_default(self):
+        """Дефолт identity_mode='string': тождество решается СТРОКОЙ.
+        Регистр/диакритика/пробелы → слияние. Разные строки (даже близкие по
+        смыслу) → разные концепты (bias: не уверены → новый, дубль безвреден)."""
+        m = VSAMemory(D=10_000, seed=1, embed_fn=fake_embed)
+        assert m._concept_index("Maya", "entity") == m._concept_index("maya", "entity")
+        assert m._concept_index("Óðinn", "entity") == m._concept_index("  odinn ", "entity")
+        a = m._concept_index("junior doctors", "entity")
+        b = m._concept_index("the junior doctors", "entity")
+        assert a != b
+
+    def test_alias_table(self):
+        """Кросс-вариантную идентичность задаёт таблица алиасов, не догадка."""
+        m = VSAMemory(D=10_000, seed=1, embed_fn=fake_embed,
+                      aliases_table={"Maya": "Mara", "Mayuh": "Mara"})
+        canon = m._concept_index("Mara", "entity")
+        assert m._concept_index("Maya", "entity") == canon
+        assert m._concept_index("mayuh", "entity") == canon
+
+    def test_embedding_mode_legacy(self):
         pytest.importorskip("sentence_transformers")
-        m = VSAMemory(D=10_000, seed=1, normalize_threshold=0.75)  # реальный эмбеддер
-        i_exact_a = m._concept_index("Maya", "entity")
-        i_exact_b = m._concept_index("maya", "entity")  # тот же ключ
-        assert i_exact_a == i_exact_b
+        m = VSAMemory(D=10_000, seed=1, normalize_threshold=0.75,
+                      identity_mode="embedding")  # legacy: косинус
         a = m._concept_index("junior doctors", "entity")
         b = m._concept_index("the junior doctors", "entity")  # near-dup → слияние
         assert a == b
         c = m._concept_index("hammer", "entity")  # далёкий → отдельный
         assert c != a
+
+    def test_events_never_semantic_merge(self):
+        m = VSAMemory(D=10_000, seed=1, normalize_threshold=0.5,
+                      identity_mode="embedding", embed_fn=fake_embed)
+        a = m._concept_index("turn one text", "event")
+        b = m._concept_index("turn two text", "event")
+        assert a != b
 
 
 class TestPersistence:

@@ -18,12 +18,30 @@ VSAMemory — полная композиционно-эпизодическая
 from __future__ import annotations
 
 import json
+import unicodedata
 from pathlib import Path
 from typing import Callable
 
 import numpy as np
 
 from . import core
+
+# Спецбуквы, которые NFKD не раскладывает (это отдельные буквы, не база+знак).
+_SCAND = {"ð": "d", "þ": "th", "æ": "ae", "œ": "oe", "ø": "o", "đ": "d", "ł": "l"}
+
+
+def _normalize_surface(s: str) -> str:
+    """Ключ идентичности концепта по СТРОКЕ (не по эмбеддингу).
+
+    casefold → скандинавские спецбуквы → NFKD + снятие диакритики → схлоп пробелов.
+    «Óðinn»=«ÓÐINN »=«odinn» → один ключ. Кириллица не латинизируется
+    («Один»→«один», отдельно от «odinn») — кросс-алфавитную идентичность задаёт
+    таблица алиасов, а не догадка."""
+    s = s.strip().casefold()
+    s = "".join(_SCAND.get(ch, ch) for ch in s)
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(ch for ch in s if not unicodedata.combining(ch))
+    return " ".join(s.split())
 
 
 class VSAMemory:
@@ -36,10 +54,19 @@ class VSAMemory:
         seed: int = 0,
         normalize_threshold: float = 0.82,
         embed_fn: Callable[[str], np.ndarray] | None = None,
+        identity_mode: str = "string",
+        aliases_table: dict[str, str] | None = None,
     ) -> None:
         self.D = D
         self._embedder_model = embedder_model
         self._normalize_threshold = float(normalize_threshold)
+        # Как решается тождество сущностей: "string" (нормализация + алиасы, безопасно)
+        # или "embedding" (legacy: косинус ≥ threshold — плодит ложные слияния).
+        self._identity_mode = identity_mode
+        self._alias_map = {
+            _normalize_surface(k): _normalize_surface(v)
+            for k, v in (aliases_table or {}).items()
+        }
         self._seed = seed
         self._rng = np.random.default_rng(seed)
         self._embed_fn = embed_fn
@@ -90,24 +117,34 @@ class VSAMemory:
     # Кодбук с нормализацией сущностей
     # ------------------------------------------------------------------
     def _concept_index(self, concept: str, kind: str) -> int:
-        """Канонический индекс концепта. Грязные варианты, чей эмбеддинг ближе
-        normalize_threshold к существующему концепту того же типа, сливаются."""
-        key = concept.strip().lower()
+        """Канонический индекс концепта.
+
+        Идентичность сущностей решается СТРОКОЙ (нормализация + таблица алиасов),
+        а не эмбеддингом: косинус кодирует смысловую близость, а не тождество
+        референта (на реальных данных Óðinn↔Райдо=0.84 > Óðinn↔Один=0.64 — порог
+        бессилен). Эмбеддинг оставлен только для recall (search/grounding).
+        Старое поведение — identity_mode='embedding'. Bias: не уверены → НОВЫЙ
+        концепт (дубль безвреден, ложное слияние — тихая порча фактов)."""
+        key = _normalize_surface(concept)
+        key = self._alias_map.get(key, key)          # декларативные алиасы
         if key in self._index:
             return self._index[key]
         emb = self._embed(concept)
 
-        same = [i for i, k in enumerate(self._kinds) if k == kind]
-        if same:
-            E = np.stack([self._embs[i] for i in same])
-            sims = E @ emb
-            j = int(np.argmax(sims))
-            if float(sims[j]) >= self._normalize_threshold:
-                canon = same[j]
-                self._index[key] = canon
-                if key != self._names[canon].strip().lower():
-                    self._aliases.setdefault(canon, []).append(concept)
-                return canon
+        # Legacy: тождество по эмбеддингу. Off by default; НИКОГДА для событий
+        # (реплики-эпизоды — не концепты для дедупа).
+        if self._identity_mode == "embedding" and kind != "event":
+            same = [i for i, k in enumerate(self._kinds) if k == kind]
+            if same:
+                E = np.stack([self._embs[i] for i in same])
+                sims = E @ emb
+                j = int(np.argmax(sims))
+                if float(sims[j]) >= self._normalize_threshold:
+                    canon = same[j]
+                    self._index[key] = canon
+                    if key != _normalize_surface(self._names[canon]):
+                        self._aliases.setdefault(canon, []).append(concept)
+                    return canon
 
         idx = len(self._names)
         self._names.append(concept)
@@ -167,6 +204,33 @@ class VSAMemory:
             "fact_idx": fidx,
         }
 
+    def search(self, query: str, top_k: int = 8) -> list[dict]:
+        """Similarity-recall по фактам (свободный запрос): эмбеддинг запроса vs
+        эмбеддинг факта (= нормированная сумма эмбеддингов его концептов).
+        Возвращает [{'triple': (s,r,o), 'score': cos}], отсортировано по убыванию.
+        Это «ANN-слой снизу» — дополняет структурный query()."""
+        if not self._fact_idx:
+            return []
+        qe = self._embed(query)
+        rows = np.stack([
+            self._embs[si] + self._embs[ri] + self._embs[oi]
+            for (si, ri, oi) in self._fact_idx
+        ])
+        rows /= np.linalg.norm(rows, axis=1, keepdims=True)
+        sims = rows @ qe
+        order = np.argsort(-sims)[:top_k]
+        return [
+            {
+                "triple": (
+                    self._names[self._fact_idx[i][0]],
+                    self._names[self._fact_idx[i][1]],
+                    self._names[self._fact_idx[i][2]],
+                ),
+                "score": float(sims[i]),
+            }
+            for i in order
+        ]
+
     # ------------------------------------------------------------------
     # Эпизоды (порядок через permutation)
     # ------------------------------------------------------------------
@@ -190,6 +254,13 @@ class VSAMemory:
     def episode_order(self, episode_id: str) -> list[str]:
         ep = self._episodes[episode_id]
         return [self.recall_at(episode_id, p) for p in range(len(ep["item_idx"]))]
+
+    def episode_items(self, episode_id: str) -> list[str]:
+        """Точный список элементов эпизода (из кодбука, без lossy-recall)."""
+        ep = self._episodes.get(episode_id)
+        if not ep:
+            return []
+        return [self._names[i] for i in ep["item_idx"]]
 
     def successor(self, episode_id: str, item: str) -> str | None:
         ep = self._episodes[episode_id]
@@ -216,6 +287,8 @@ class VSAMemory:
             "D": self.D, "seed": self._seed, "emb_dim": self._emb_dim,
             "embedder_model": self._embedder_model,
             "normalize_threshold": self._normalize_threshold,
+            "identity_mode": self._identity_mode,
+            "alias_map": self._alias_map,
             "role_names": list(self.ROLE_NAMES),
             "names": self._names, "kinds": self._kinds,
             "index": self._index,
@@ -234,7 +307,9 @@ class VSAMemory:
 
         m = cls(D=meta["D"], embedder_model=meta.get("embedder_model", "all-MiniLM-L6-v2"),
                 seed=meta["seed"], normalize_threshold=meta["normalize_threshold"],
-                embed_fn=embed_fn)
+                embed_fn=embed_fn,
+                identity_mode=meta.get("identity_mode", "string"))
+        m._alias_map = dict(meta.get("alias_map", {}))
         m._emb_dim = meta["emb_dim"]
         m._proj = arr["proj"]
         roles = arr["roles"].astype(np.float32)

@@ -34,9 +34,17 @@ class CognitiveMemory:
         seed: int = 0,
         normalize_threshold: float = 0.82,
         embed_fn: Callable[[str], np.ndarray] | None = None,
+        embedder_model: str = "paraphrase-multilingual-MiniLM-L12-v2",
+        identity_mode: str = "string",
+        aliases_table: dict[str, str] | None = None,
     ) -> None:
+        # Мультиязычный эмбеддер по умолчанию → кросс-язычный recall
+        # (запрос на одном языке поднимает факт на другом).
+        # Идентичность сущностей — строкой+алиасами (identity_mode='string'), не косинусом.
         self.vsa = VSAMemory(
-            D=D, seed=seed, normalize_threshold=normalize_threshold, embed_fn=embed_fn
+            D=D, seed=seed, normalize_threshold=normalize_threshold,
+            embed_fn=embed_fn, embedder_model=embedder_model,
+            identity_mode=identity_mode, aliases_table=aliases_table,
         )
 
     # ---- запись ----
@@ -62,11 +70,18 @@ class CognitiveMemory:
     def recall_subject(self, relation: str, obj: str) -> dict:
         return self.vsa.query({"relation": relation, "object": obj}, "subject")
 
+    def search(self, query: str, top_k: int = 8) -> list[dict]:
+        """Свободный similarity-поиск по сохранённым фактам."""
+        return self.vsa.search(query, top_k)
+
     def whats_next(self, episode_id: str, item: str) -> str | None:
         return self.vsa.successor(episode_id, item)
 
     def episode_order(self, episode_id: str) -> list[str]:
         return self.vsa.episode_order(episode_id)
+
+    def episode_items(self, episode_id: str) -> list[str]:
+        return self.vsa.episode_items(episode_id)
 
     # ---- персистентность ----
     def save(self, path: str | Path) -> None:
